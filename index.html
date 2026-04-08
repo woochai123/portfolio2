@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js" defer></script>
 <title>우차이의 포트폴리오 2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -166,8 +167,19 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
 </div>
 
 <div class="pg" id="p-cagr">
-  <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 종목별 연평균 상승률 (CAGR)</div>
-  <div style="font-size:12px;color:#4a5568;margin-bottom:14px">포트폴리오 종목 자동 반영</div>
+  <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 종목별 CAGR · 실시간 차트</div>
+  <div style="font-size:12px;color:#4a5568;margin-bottom:12px">종목 터치 → 차트 표시 · 핀치/스크롤로 확대하면 일봉·시간봉 전환</div>
+  <div id="chartbox" style="display:none;background:#1e2330;border:1px solid #2a3045;border-radius:12px;overflow:hidden;margin-bottom:12px">
+    <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a3045">
+      <div>
+        <div id="chartlabel" style="font-size:13px;font-weight:700;color:#e8ecf4"></div>
+        <div id="chartperiod" style="font-size:10px;color:#4f9eff;margin-top:2px"></div>
+      </div>
+      <button class="rb2" onclick="document.getElementById('chartbox').style.display='none'">✕ 닫기</button>
+    </div>
+    <div id="chartloading" style="display:none;padding:16px;text-align:center;font-size:12px;color:#4a5568">📊 차트 불러오는 중...</div>
+    <div id="chartdiv" style="height:240px"></div>
+  </div>
   <div id="cagrlist"><div class="ne">포트폴리오에 종목을 등록하면<br>자동으로 표시됩니다.</div></div>
 </div>
 
@@ -575,13 +587,119 @@ function renderCagr(){
   var el=document.getElementById('cagrlist');
   if(!stocks.length){el.innerHTML='<div class="ne">포트폴리오에 종목을 등록하면<br>자동으로 표시됩니다.</div>';return;}
   var h='';
-  stocks.forEach(function(s){
+  stocks.forEach(function(s,i){
     var c=s.sym&&CAGR[s.sym]?CAGR[s.sym]:(15+Math.random()*15).toFixed(1);
     var pct=Math.min(parseFloat(c),65)/65*100;
-    h+='<div class="ci"><div style="min-width:75px"><div style="font-size:13px;font-weight:700">'+s.name+'</div>'+(s.sym?'<div style="font-size:11px;color:#4f9eff">'+s.sym+'</div>':'')+'</div><div class="cbg"><div class="cbf" style="width:'+pct+'%"></div></div><div class="cp">+'+c+'%</div></div>';
+    var hasTick=s.sym?'onclick="showChart('+i+')" style="cursor:pointer"':'';
+    h+='<div class="ci" '+hasTick+'><div style="min-width:75px"><div style="font-size:13px;font-weight:700">'+s.name+'</div>'+(s.sym?'<div style="font-size:11px;color:#4f9eff">'+s.sym+'</div>':'<div style="font-size:10px;color:#4a5568">티커 없음</div>')+'</div><div class="cbg"><div class="cbf" style="width:'+pct+'%"></div></div><div class="cp">+'+c+'%</div>'+(s.sym?'<div style="font-size:12px;color:#4a5568;margin-left:4px;flex-shrink:0">📈</div>':'')+'</div>';
   });
   el.innerHTML=h;
 }
+
+// ── 차트 ──────────────────────────────────────
+var chartObj=null,chartSeries=null,chartSym='',chartInterval='1mo',chartLoading=false;
+
+function showChart(idx){
+  var s=stocks[idx];
+  if(!s||!s.sym){toast('티커가 없는 종목은 차트를 볼 수 없어요');return;}
+  var box=document.getElementById('chartbox');
+  box.style.display='block';
+  document.getElementById('chartlabel').textContent=s.name+' ('+s.sym+')';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+  chartInterval='1mo';
+  if(typeof LightweightCharts==='undefined'){
+    document.getElementById('chartloading').style.display='block';
+    var sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
+    sc.onload=function(){_initChart();_loadChart(s.sym,'1mo');};
+    document.head.appendChild(sc);
+    return;
+  }
+  if(!chartObj)_initChart();
+  _loadChart(s.sym,'1mo');
+}
+
+function _initChart(){
+  if(chartObj)return;
+  var el=document.getElementById('chartdiv');
+  chartObj=LightweightCharts.createChart(el,{
+    width:el.clientWidth||window.innerWidth-28,
+    height:240,
+    layout:{background:{type:'solid',color:'#1e2330'},textColor:'#8892a4'},
+    grid:{vertLines:{color:'#2a3045'},horzLines:{color:'#2a3045'}},
+    crosshair:{mode:1},
+    rightPriceScale:{borderColor:'#2a3045'},
+    timeScale:{borderColor:'#2a3045',timeVisible:true,secondsVisible:false},
+    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
+    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
+  });
+  chartSeries=chartObj.addCandlestickSeries({
+    upColor:'#00e5b0',downColor:'#ff4d6d',
+    borderUpColor:'#00e5b0',borderDownColor:'#ff4d6d',
+    wickUpColor:'#00e5b0',wickDownColor:'#ff4d6d'
+  });
+  chartObj.timeScale().subscribeVisibleLogicalRangeChange(function(range){
+    if(!range||chartLoading)return;
+    var bars=range.to-range.from;
+    // 핀치 확대 시 더 세밀한 봉으로 전환
+    if(chartInterval==='1mo'&&bars<18)_switchInterval('1d');
+    else if(chartInterval==='1d'&&bars<35)_switchInterval('1h');
+    // 핀치 축소 시 더 큰 단위로 전환
+    else if(chartInterval==='1h'&&bars>130)_switchInterval('1d');
+    else if(chartInterval==='1d'&&bars>210)_switchInterval('1mo');
+  });
+  window.addEventListener('resize',function(){
+    if(chartObj)chartObj.applyOptions({width:document.getElementById('chartdiv').clientWidth||window.innerWidth-28});
+  });
+}
+
+function _switchInterval(iv){
+  if(chartInterval===iv||chartLoading)return;
+  _loadChart(chartSym,iv);
+}
+
+function _loadChart(sym,iv){
+  if(!sym)return;
+  chartSym=sym;chartInterval=iv;chartLoading=true;
+  var rangeMap={'1mo':'5y','1d':'1y','1h':'1mo'};
+  var lblMap={'1mo':'월봉 5년 — 핀치 확대 시 일봉 전환','1d':'일봉 1년 — 더 확대 시 시간봉 전환','1h':'시간봉 1달 — 축소 시 일봉 전환'};
+  document.getElementById('chartperiod').textContent=lblMap[iv]||'';
+  document.getElementById('chartloading').style.display='block';
+  var url='https://query2.finance.yahoo.com/v8/finance/chart/'+sym+'?interval='+iv+'&range='+rangeMap[iv];
+  var settled=false;
+  function onData(raw){
+    if(settled)return;
+    var data={};try{data=typeof raw==='string'?JSON.parse(raw):raw;}catch(e){}
+    try{
+      var res=data.chart.result[0];
+      var ts=res.timestamp;
+      var q=res.indicators.quote[0];
+      var candles=ts.map(function(t,i){
+        var o=q.open[i],h=q.high[i],l=q.low[i],c=q.close[i];
+        if(o==null||h==null||l==null||c==null)return null;
+        return {time:t,open:+o.toFixed(4),high:+h.toFixed(4),low:+l.toFixed(4),close:+c.toFixed(4)};
+      }).filter(Boolean);
+      if(candles.length){
+        settled=true;
+        chartSeries.setData(candles);
+        chartObj.timeScale().fitContent();
+      }
+    }catch(e){}
+    if(settled){chartLoading=false;document.getElementById('chartloading').style.display='none';}
+  }
+  fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(function(d){onData(d.contents||'{}');})
+    .catch(function(){});
+  fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(onData)
+    .catch(function(){});
+  setTimeout(function(){
+    if(!settled){settled=true;chartLoading=false;document.getElementById('chartloading').style.display='none';}
+  },6000);
+}
+// ─────────────────────────────────────────────
 
 var R2J='https://api.rss2json.com/v1/api.json?rss_url=';
 
