@@ -468,74 +468,83 @@ function onTickInput(val){
   clearTimeout(searchTmr);
   drop.style.display='block';
   var local=searchLocal(q);
-  if(local.length)renderDrop(local,drop);
+  if(local.length)renderDrop(withDirect(q,local),drop);
   else drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';
 
   searchTmr=setTimeout(function(){
     var isKoQ=!!((q.match(/[\uAC00-\uD7A3]/g)||[]).length);
-    // q를 raw로 넣어야 프록시에서 encodeURIComponent(yUrl) 할 때 한 번만 인코딩됨
-    var yUrlKo='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=ko-KR&region=KR';
-    var yUrlEn='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=en-US&region=US';
-    var yUrl=isKoQ?yUrlKo:yUrlEn;
+    var settled=false;
 
-    function parseQ(d){
+    function parseAutoc(d){
+      try{
+        return (d.ResultSet.Result||[]).map(function(r){
+          return {symbol:r.symbol,longname:r.name,exchDisp:r.exchDisp,
+            quoteType:r.typeDisp==='ETF'?'ETF':'EQUITY'};
+        }).filter(function(r){return r.symbol;}).slice(0,15);
+      }catch(e){return [];}
+    }
+    function parseV1(d){
       var qs=[];
       try{if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];}catch(e){}
       return qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,15);
     }
-
-    // 티커 형식이면 "직접 추가" 옵션 준비
-    var isTicker=/^[A-Za-z][A-Za-z0-9\.\-]{0,11}$/.test(q);
-    function withDirect(list){
-      if(!isTicker)return list;
-      var sym=q.toUpperCase();
-      var already=list.some(function(r){return(r.symbol||'').toUpperCase()===sym;});
-      if(already)return list;
-      return list.concat([{symbol:sym,longname:sym+' — 직접 추가 (티커 직접 등록)',exchDisp:'직접입력',_direct:true}]);
-    }
-
-    var settled=false;
     function done(qs){
       if(settled)return;
       settled=true;
       var list=(qs&&qs.length)?qs:searchLocal(q);
-      renderDrop(withDirect(list),drop);
+      renderDrop(withDirect(q,list),drop);
     }
 
-    // 4개 프록시 동시 요청 — 먼저 성공한 결과 사용
-    var reqs=[
-      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
-        .then(function(r){return r.json();})
-        .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
-      fetch('https://corsproxy.io/?'+encodeURIComponent(yUrl))
-        .then(function(r){return r.json();})
-        .then(parseQ),
-      fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(yUrl))
-        .then(function(r){return r.json();})
-        .then(parseQ),
-      fetch('https://thingproxy.freeboard.io/fetch/'+yUrl)
-        .then(function(r){return r.json();})
-        .then(parseQ)
-    ];
-    reqs.forEach(function(p){
-      p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
-    });
-    // 한국어 검색이면 영어 URL로도 병행 시도
-    if(isKoQ){
-      var reqs2=[
-        fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrlEn))
-          .then(function(r){return r.json();})
-          .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
-        fetch('https://corsproxy.io/?'+encodeURIComponent(yUrlEn))
-          .then(function(r){return r.json();}).then(parseQ)
-      ];
-      reqs2.forEach(function(p){
-        p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
-      });
-    }
-    // 4초 후에도 결과 없으면 로컬 목록으로 대체
-    setTimeout(function(){if(!settled)done([]);},4000);
+    // ① JSONP — script 태그로 CORS 완전 우회 (가장 신뢰성 높음)
+    var cbName='_yf'+Date.now();
+    var sc=document.createElement('script');
+    var jpDone=false;
+    var jpTimer=setTimeout(function(){
+      if(!jpDone){jpDone=true;delete window[cbName];if(sc.parentNode)sc.parentNode.removeChild(sc);}
+    },5000);
+    window[cbName]=function(data){
+      if(jpDone)return;
+      jpDone=true;clearTimeout(jpTimer);
+      delete window[cbName];if(sc.parentNode)sc.parentNode.removeChild(sc);
+      var qs=parseAutoc(data);
+      if(!settled&&qs.length)done(qs);
+    };
+    sc.onerror=function(){if(!jpDone){jpDone=true;clearTimeout(jpTimer);delete window[cbName];}};
+    sc.src='https://autoc.finance.yahoo.com/autoc?query='+encodeURIComponent(q)+(isKoQ?'&region=KR&lang=ko-KR':'&region=1&lang=en')+'&callback='+cbName;
+    document.head.appendChild(sc);
+
+    // ② allorigins → autoc (JSONP 실패 백업)
+    var autocUrl='https://autoc.finance.yahoo.com/autoc?query='+encodeURIComponent(q)+(isKoQ?'&region=KR&lang=ko-KR':'&region=1&lang=en');
+    fetch('https://api.allorigins.win/get?url='+encodeURIComponent(autocUrl))
+      .then(function(r){return r.json();})
+      .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}
+        var qs=parseAutoc(p);if(!settled&&qs.length)done(qs);})
+      .catch(function(){});
+
+    // ③ allorigins → v1/search
+    var v1Url='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true'+(isKoQ?'&lang=ko-KR&region=KR':'&lang=en-US&region=US');
+    fetch('https://api.allorigins.win/get?url='+encodeURIComponent(v1Url))
+      .then(function(r){return r.json();})
+      .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}
+        var qs=parseV1(p);if(!settled&&qs.length)done(qs);})
+      .catch(function(){});
+
+    // ④ corsproxy → v1/search
+    fetch('https://corsproxy.io/?'+encodeURIComponent(v1Url))
+      .then(function(r){return r.json();})
+      .then(function(d){var qs=parseV1(d);if(!settled&&qs.length)done(qs);})
+      .catch(function(){});
+
+    setTimeout(function(){if(!settled)done([]);},5500);
   },300);
+}
+
+function withDirect(q,list){
+  var isTicker=/^[A-Za-z][A-Za-z0-9\.\-]{0,11}$/.test(q);
+  if(!isTicker)return list;
+  var sym=q.toUpperCase();
+  if(list.some(function(r){return(r.symbol||'').toUpperCase()===sym;}))return list;
+  return list.concat([{symbol:sym,longname:sym+' — 직접 추가',exchDisp:'직접입력',_direct:true}]);
 }
 
 function pickTick(sym,nm){
