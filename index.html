@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>우차이의 포트폴리오</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js" defer></script>
+<title>우차이의 포트폴리오 2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;color:#e8ecf4;min-height:100vh;padding-bottom:70px}
@@ -166,8 +167,19 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
 </div>
 
 <div class="pg" id="p-cagr">
-  <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 종목별 연평균 상승률 (CAGR)</div>
-  <div style="font-size:12px;color:#4a5568;margin-bottom:14px">포트폴리오 종목 자동 반영</div>
+  <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 종목별 CAGR · 실시간 차트</div>
+  <div style="font-size:12px;color:#4a5568;margin-bottom:12px">종목 터치 → 차트 표시 · 핀치/스크롤로 확대하면 일봉·시간봉 전환</div>
+  <div id="chartbox" style="display:none;background:#1e2330;border:1px solid #2a3045;border-radius:12px;overflow:hidden;margin-bottom:12px">
+    <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a3045">
+      <div>
+        <div id="chartlabel" style="font-size:13px;font-weight:700;color:#e8ecf4"></div>
+        <div id="chartperiod" style="font-size:10px;color:#4f9eff;margin-top:2px"></div>
+      </div>
+      <button class="rb2" onclick="document.getElementById('chartbox').style.display='none'">✕ 닫기</button>
+    </div>
+    <div id="chartloading" style="display:none;padding:16px;text-align:center;font-size:12px;color:#4a5568">📊 차트 불러오는 중...</div>
+    <div id="chartdiv" style="height:240px"></div>
+  </div>
   <div id="cagrlist"><div class="ne">포트폴리오에 종목을 등록하면<br>자동으로 표시됩니다.</div></div>
 </div>
 
@@ -177,21 +189,21 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div id="n-pf"><div class="ne">포트폴리오에 티커가 있는 종목을<br>등록하면 뉴스가 자동으로 뜹니다.</div></div>
   </div>
   <div class="ns">
-    <div class="nt">🌍 글로벌 증시 <button class="rb2" onclick="loadRss('https://feeds.marketwatch.com/marketwatch/topstories/','n-mkt')">🔄</button></div>
+    <div class="nt">🌍 글로벌 증시 <button class="rb2" onclick="loadRss('https://www.hankyung.com/feed/economy','n-mkt')">🔄</button></div>
     <div id="n-mkt"><div class="nl">불러오는 중...</div></div>
   </div>
   <div class="ns">
-    <div class="nt">🛢️ 암호화폐 <button class="rb2" onclick="loadRss('https://cointelegraph.com/rss','n-cry')">🔄</button></div>
+    <div class="nt">🛢️ 암호화폐 <button class="rb2" onclick="loadRss('https://www.blockmedia.co.kr/feed/','n-cry')">🔄</button></div>
     <div id="n-cry"><div class="nl">불러오는 중...</div></div>
   </div>
 </div>
 
 <div class="pg" id="p-tech">
-  <div class="ns"><div class="nt">🤖 AI / 인공지능 <button class="rb2" onclick="loadRss('https://venturebeat.com/category/ai/feed/','n-ai')">🔄</button></div><div id="n-ai"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">⚛️ 양자컴퓨터 <button class="rb2" onclick="loadRss('https://quantumcomputingreport.com/feed/','n-qt')">🔄</button></div><div id="n-qt"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🏭 반도체 <button class="rb2" onclick="loadRss('https://semiengineering.com/feed/','n-semi')">🔄</button></div><div id="n-semi"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🤖 로봇 / 자율주행 <button class="rb2" onclick="loadRss('https://spectrum.ieee.org/feeds/topic/robotics.rss','n-rob')">🔄</button></div><div id="n-rob"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🚀 우주 / 바이오 <button class="rb2" onclick="loadRss('https://www.nasaspaceflight.com/feed/','n-sp')">🔄</button></div><div id="n-sp"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🤖 AI / 인공지능 <button class="rb2" onclick="loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai')">🔄</button></div><div id="n-ai"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">⚛️ 양자컴퓨터 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-qt')">🔄</button></div><div id="n-qt"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🏭 반도체 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-semi')">🔄</button></div><div id="n-semi"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🤖 로봇 / 자율주행 <button class="rb2" onclick="loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob')">🔄</button></div><div id="n-rob"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🚀 우주 / 바이오 <button class="rb2" onclick="loadRss('https://www.mk.co.kr/rss/50400001/','n-sp')">🔄</button></div><div id="n-sp"><div class="nl">불러오는 중...</div></div></div>
 </div>
 
 <div class="pg" id="p-sim">
@@ -237,6 +249,176 @@ var exRate=1350,curMode='KRW',mKey='';
 var sim=JSON.parse(localStorage.getItem('wc_sim')||'null')||{rate:7,daily:60000,monthly:1000000,addFrom:10000000,addFromYear:7,divRate:5};
 var loaded={},searchTmr=null;
 
+var LOCAL_STOCKS=[
+  // ── 한국 KOSPI/KOSDAQ ──
+  {symbol:'005930.KS',longname:'삼성전자',exchDisp:'KRX'},{symbol:'000660.KS',longname:'SK하이닉스',exchDisp:'KRX'},
+  {symbol:'373220.KS',longname:'LG에너지솔루션',exchDisp:'KRX'},{symbol:'207940.KS',longname:'삼성바이오로직스',exchDisp:'KRX'},
+  {symbol:'005380.KS',longname:'현대차',exchDisp:'KRX'},{symbol:'000270.KS',longname:'기아',exchDisp:'KRX'},
+  {symbol:'068270.KS',longname:'셀트리온',exchDisp:'KRX'},{symbol:'005490.KS',longname:'POSCO홀딩스',exchDisp:'KRX'},
+  {symbol:'051910.KS',longname:'LG화학',exchDisp:'KRX'},{symbol:'006400.KS',longname:'삼성SDI',exchDisp:'KRX'},
+  {symbol:'012330.KS',longname:'현대모비스',exchDisp:'KRX'},{symbol:'035720.KS',longname:'카카오',exchDisp:'KRX'},
+  {symbol:'035420.KS',longname:'NAVER',exchDisp:'KRX'},{symbol:'105560.KS',longname:'KB금융',exchDisp:'KRX'},
+  {symbol:'055550.KS',longname:'신한지주',exchDisp:'KRX'},{symbol:'086790.KS',longname:'하나금융지주',exchDisp:'KRX'},
+  {symbol:'316140.KS',longname:'우리금융지주',exchDisp:'KRX'},{symbol:'003550.KS',longname:'LG',exchDisp:'KRX'},
+  {symbol:'034730.KS',longname:'SK',exchDisp:'KRX'},{symbol:'096770.KS',longname:'SK이노베이션',exchDisp:'KRX'},
+  {symbol:'033780.KS',longname:'KT&G',exchDisp:'KRX'},{symbol:'015760.KS',longname:'한국전력',exchDisp:'KRX'},
+  {symbol:'017670.KS',longname:'SK텔레콤',exchDisp:'KRX'},{symbol:'030200.KS',longname:'KT',exchDisp:'KRX'},
+  {symbol:'066570.KS',longname:'LG전자',exchDisp:'KRX'},{symbol:'003670.KS',longname:'포스코퓨처엠',exchDisp:'KRX'},
+  {symbol:'028260.KS',longname:'삼성물산',exchDisp:'KRX'},{symbol:'009150.KS',longname:'삼성전기',exchDisp:'KRX'},
+  {symbol:'010130.KS',longname:'고려아연',exchDisp:'KRX'},{symbol:'010950.KS',longname:'S-Oil',exchDisp:'KRX'},
+  {symbol:'047050.KS',longname:'포스코인터내셔널',exchDisp:'KRX'},{symbol:'138040.KS',longname:'메리츠금융지주',exchDisp:'KRX'},
+  {symbol:'032830.KS',longname:'삼성생명',exchDisp:'KRX'},{symbol:'000810.KS',longname:'삼성화재',exchDisp:'KRX'},
+  {symbol:'090430.KS',longname:'아모레퍼시픽',exchDisp:'KRX'},{symbol:'012450.KS',longname:'한화에어로스페이스',exchDisp:'KRX'},
+  {symbol:'259960.KS',longname:'크래프톤',exchDisp:'KRX'},{symbol:'323410.KS',longname:'카카오뱅크',exchDisp:'KRX'},
+  {symbol:'377300.KS',longname:'카카오페이',exchDisp:'KRX'},{symbol:'036570.KS',longname:'엔씨소프트',exchDisp:'KRX'},
+  {symbol:'251270.KS',longname:'넷마블',exchDisp:'KRX'},{symbol:'326030.KS',longname:'SK바이오팜',exchDisp:'KRX'},
+  {symbol:'128940.KS',longname:'한미약품',exchDisp:'KRX'},{symbol:'000100.KS',longname:'유한양행',exchDisp:'KRX'},
+  {symbol:'034020.KS',longname:'두산에너빌리티',exchDisp:'KRX'},{symbol:'086280.KS',longname:'현대글로비스',exchDisp:'KRX'},
+  {symbol:'011170.KS',longname:'롯데케미칼',exchDisp:'KRX'},{symbol:'011200.KS',longname:'HMM',exchDisp:'KRX'},
+  {symbol:'003490.KS',longname:'대한항공',exchDisp:'KRX'},{symbol:'010620.KS',longname:'현대중공업',exchDisp:'KRX'},
+  {symbol:'042660.KS',longname:'한화오션',exchDisp:'KRX'},{symbol:'009540.KS',longname:'HD한국조선해양',exchDisp:'KRX'},
+  {symbol:'267250.KS',longname:'HD현대',exchDisp:'KRX'},{symbol:'329180.KS',longname:'HD현대중공업',exchDisp:'KRX'},
+  {symbol:'267260.KS',longname:'HD현대일렉트릭',exchDisp:'KRX'},{symbol:'267270.KS',longname:'HD현대건설기계',exchDisp:'KRX'},
+  {symbol:'042670.KS',longname:'HD현대인프라코어',exchDisp:'KRX'},{symbol:'443060.KS',longname:'HD현대마린솔루션',exchDisp:'KRX'},
+  {symbol:'000720.KS',longname:'현대건설',exchDisp:'KRX'},
+  {symbol:'028050.KS',longname:'삼성엔지니어링',exchDisp:'KRX'},{symbol:'047810.KS',longname:'한국항공우주',exchDisp:'KRX'},
+  {symbol:'010140.KS',longname:'삼성중공업',exchDisp:'KRX'},{symbol:'071050.KS',longname:'한국금융지주',exchDisp:'KRX'},
+  {symbol:'000880.KS',longname:'한화',exchDisp:'KRX'},{symbol:'079550.KS',longname:'LIG넥스원',exchDisp:'KRX'},
+  {symbol:'003230.KS',longname:'삼양식품',exchDisp:'KRX'},{symbol:'097950.KS',longname:'CJ제일제당',exchDisp:'KRX'},
+  {symbol:'004370.KS',longname:'농심',exchDisp:'KRX'},{symbol:'005935.KS',longname:'삼성전자우',exchDisp:'KRX'},
+  {symbol:'034220.KS',longname:'LG디스플레이',exchDisp:'KRX'},{symbol:'011070.KS',longname:'LG이노텍',exchDisp:'KRX'},
+  {symbol:'032640.KS',longname:'LG유플러스',exchDisp:'KRX'},{symbol:'018260.KS',longname:'삼성SDS',exchDisp:'KRX'},
+  {symbol:'302440.KS',longname:'SK바이오사이언스',exchDisp:'KRX'},{symbol:'402340.KS',longname:'SK스퀘어',exchDisp:'KRX'},
+  {symbol:'293490.KQ',longname:'카카오게임즈',exchDisp:'KOSDAQ'},{symbol:'009830.KS',longname:'한화솔루션',exchDisp:'KRX'},
+  {symbol:'241560.KS',longname:'두산밥캣',exchDisp:'KRX'},{symbol:'004020.KS',longname:'현대제철',exchDisp:'KRX'},
+  {symbol:'005830.KS',longname:'DB손해보험',exchDisp:'KRX'},{symbol:'032830.KS',longname:'삼성생명',exchDisp:'KRX'},
+  {symbol:'139480.KS',longname:'이마트',exchDisp:'KRX'},{symbol:'023530.KS',longname:'롯데쇼핑',exchDisp:'KRX'},
+  {symbol:'069960.KS',longname:'현대백화점',exchDisp:'KRX'},{symbol:'271560.KS',longname:'오리온',exchDisp:'KRX'},
+  {symbol:'007070.KS',longname:'GS리테일',exchDisp:'KRX'},{symbol:'078930.KS',longname:'GS',exchDisp:'KRX'},
+  {symbol:'001570.KS',longname:'금양',exchDisp:'KRX'},{symbol:'055490.KS',longname:'포스코DX',exchDisp:'KRX'},
+  // KOSDAQ
+  {symbol:'247540.KQ',longname:'에코프로비엠',exchDisp:'KOSDAQ'},{symbol:'086520.KQ',longname:'에코프로',exchDisp:'KOSDAQ'},
+  {symbol:'028300.KQ',longname:'HLB',exchDisp:'KOSDAQ'},{symbol:'196170.KQ',longname:'알테오젠',exchDisp:'KOSDAQ'},
+  {symbol:'091990.KQ',longname:'셀트리온헬스케어',exchDisp:'KOSDAQ'},{symbol:'145020.KQ',longname:'휴젤',exchDisp:'KOSDAQ'},
+  {symbol:'214150.KQ',longname:'클래시스',exchDisp:'KOSDAQ'},{symbol:'357780.KQ',longname:'솔브레인',exchDisp:'KOSDAQ'},
+  {symbol:'039030.KQ',longname:'이오테크닉스',exchDisp:'KOSDAQ'},{symbol:'403870.KQ',longname:'HPSP',exchDisp:'KOSDAQ'},
+  {symbol:'095340.KQ',longname:'ISC',exchDisp:'KOSDAQ'},{symbol:'036800.KQ',longname:'나스미디어',exchDisp:'KOSDAQ'},
+  {symbol:'950130.KQ',longname:'엑스플러스',exchDisp:'KOSDAQ'},{symbol:'042700.KQ',longname:'한미반도체',exchDisp:'KOSDAQ'},
+  // ── 미국 빅테크 / 성장주 ──
+  {symbol:'AAPL',longname:'Apple Inc.',exchDisp:'NASDAQ'},{symbol:'MSFT',longname:'Microsoft Corporation',exchDisp:'NASDAQ'},
+  {symbol:'NVDA',longname:'NVIDIA Corporation',exchDisp:'NASDAQ'},{symbol:'GOOGL',longname:'Alphabet Inc. (A)',exchDisp:'NASDAQ'},
+  {symbol:'GOOG',longname:'Alphabet Inc. (C)',exchDisp:'NASDAQ'},{symbol:'AMZN',longname:'Amazon.com Inc.',exchDisp:'NASDAQ'},
+  {symbol:'META',longname:'Meta Platforms Inc.',exchDisp:'NASDAQ'},{symbol:'TSLA',longname:'Tesla Inc.',exchDisp:'NASDAQ'},
+  {symbol:'AVGO',longname:'Broadcom Inc.',exchDisp:'NASDAQ'},{symbol:'ORCL',longname:'Oracle Corporation',exchDisp:'NYSE'},
+  {symbol:'NFLX',longname:'Netflix Inc.',exchDisp:'NASDAQ'},{symbol:'AMD',longname:'Advanced Micro Devices',exchDisp:'NASDAQ'},
+  {symbol:'INTC',longname:'Intel Corporation',exchDisp:'NASDAQ'},{symbol:'QCOM',longname:'Qualcomm Inc.',exchDisp:'NASDAQ'},
+  {symbol:'CSCO',longname:'Cisco Systems Inc.',exchDisp:'NASDAQ'},{symbol:'ADBE',longname:'Adobe Inc.',exchDisp:'NASDAQ'},
+  {symbol:'CRM',longname:'Salesforce Inc.',exchDisp:'NYSE'},{symbol:'NOW',longname:'ServiceNow Inc.',exchDisp:'NYSE'},
+  {symbol:'INTU',longname:'Intuit Inc.',exchDisp:'NASDAQ'},{symbol:'PANW',longname:'Palo Alto Networks',exchDisp:'NASDAQ'},
+  {symbol:'SNPS',longname:'Synopsys Inc.',exchDisp:'NASDAQ'},{symbol:'CDNS',longname:'Cadence Design Systems',exchDisp:'NASDAQ'},
+  {symbol:'AMAT',longname:'Applied Materials Inc.',exchDisp:'NASDAQ'},{symbol:'ADI',longname:'Analog Devices Inc.',exchDisp:'NASDAQ'},
+  {symbol:'LRCX',longname:'Lam Research Corporation',exchDisp:'NASDAQ'},{symbol:'KLAC',longname:'KLA Corporation',exchDisp:'NASDAQ'},
+  {symbol:'MU',longname:'Micron Technology Inc.',exchDisp:'NASDAQ'},{symbol:'TSM',longname:'Taiwan Semiconductor',exchDisp:'NYSE'},
+  {symbol:'ASML',longname:'ASML Holding N.V.',exchDisp:'NASDAQ'},{symbol:'ARM',longname:'Arm Holdings plc',exchDisp:'NASDAQ'},
+  {symbol:'PLTR',longname:'Palantir Technologies',exchDisp:'NYSE'},{symbol:'SOFI',longname:'SoFi Technologies',exchDisp:'NASDAQ'},
+  {symbol:'IONQ',longname:'IonQ Inc.',exchDisp:'NYSE'},{symbol:'RGTI',longname:'Rigetti Computing',exchDisp:'NASDAQ'},
+  {symbol:'QUBT',longname:'Quantum Computing Inc.',exchDisp:'NASDAQ'},{symbol:'MSTR',longname:'MicroStrategy Inc.',exchDisp:'NASDAQ'},
+  {symbol:'COIN',longname:'Coinbase Global Inc.',exchDisp:'NASDAQ'},{symbol:'HOOD',longname:'Robinhood Markets',exchDisp:'NASDAQ'},
+  {symbol:'RKLB',longname:'Rocket Lab USA Inc.',exchDisp:'NASDAQ'},{symbol:'RIVN',longname:'Rivian Automotive',exchDisp:'NASDAQ'},
+  {symbol:'LCID',longname:'Lucid Group Inc.',exchDisp:'NASDAQ'},{symbol:'NIO',longname:'NIO Inc.',exchDisp:'NYSE'},
+  {symbol:'XPEV',longname:'XPeng Inc.',exchDisp:'NYSE'},{symbol:'LI',longname:'Li Auto Inc.',exchDisp:'NASDAQ'},
+  {symbol:'TTD',longname:'The Trade Desk Inc.',exchDisp:'NASDAQ'},{symbol:'SHOP',longname:'Shopify Inc.',exchDisp:'NYSE'},
+  {symbol:'SQ',longname:'Block Inc.',exchDisp:'NYSE'},{symbol:'PYPL',longname:'PayPal Holdings Inc.',exchDisp:'NASDAQ'},
+  {symbol:'UBER',longname:'Uber Technologies Inc.',exchDisp:'NYSE'},{symbol:'LYFT',longname:'Lyft Inc.',exchDisp:'NASDAQ'},
+  {symbol:'ABNB',longname:'Airbnb Inc.',exchDisp:'NASDAQ'},{symbol:'SNOW',longname:'Snowflake Inc.',exchDisp:'NYSE'},
+  {symbol:'DDOG',longname:'Datadog Inc.',exchDisp:'NASDAQ'},{symbol:'NET',longname:'Cloudflare Inc.',exchDisp:'NYSE'},
+  {symbol:'CRWD',longname:'CrowdStrike Holdings',exchDisp:'NASDAQ'},{symbol:'ZS',longname:'Zscaler Inc.',exchDisp:'NASDAQ'},
+  {symbol:'OKTA',longname:'Okta Inc.',exchDisp:'NASDAQ'},{symbol:'RBLX',longname:'Roblox Corporation',exchDisp:'NYSE'},
+  {symbol:'SPOT',longname:'Spotify Technology',exchDisp:'NYSE'},{symbol:'SNAP',longname:'Snap Inc.',exchDisp:'NYSE'},
+  {symbol:'PINS',longname:'Pinterest Inc.',exchDisp:'NYSE'},{symbol:'ROKU',longname:'Roku Inc.',exchDisp:'NASDAQ'},
+  {symbol:'ZM',longname:'Zoom Video Communications',exchDisp:'NASDAQ'},{symbol:'TWLO',longname:'Twilio Inc.',exchDisp:'NYSE'},
+  {symbol:'APPN',longname:'Appian Corporation',exchDisp:'NASDAQ'},{symbol:'PATH',longname:'UiPath Inc.',exchDisp:'NYSE'},
+  {symbol:'AI',longname:'C3.ai Inc.',exchDisp:'NYSE'},{symbol:'BBAI',longname:'BigBear.ai Holdings',exchDisp:'NYSE'},
+  {symbol:'SOUN',longname:'SoundHound AI Inc.',exchDisp:'NASDAQ'},{symbol:'SMCI',longname:'Super Micro Computer',exchDisp:'NASDAQ'},
+  {symbol:'DELL',longname:'Dell Technologies',exchDisp:'NYSE'},{symbol:'HPQ',longname:'HP Inc.',exchDisp:'NYSE'},
+  {symbol:'AEHR',longname:'Aehr Test Systems',exchDisp:'NASDAQ'},{symbol:'ONTO',longname:'Onto Innovation',exchDisp:'NYSE'},
+  // ── 미국 우량주 ──
+  {symbol:'BRK-B',longname:'Berkshire Hathaway Inc.',exchDisp:'NYSE'},{symbol:'JPM',longname:'JPMorgan Chase & Co.',exchDisp:'NYSE'},
+  {symbol:'V',longname:'Visa Inc.',exchDisp:'NYSE'},{symbol:'MA',longname:'Mastercard Inc.',exchDisp:'NYSE'},
+  {symbol:'UNH',longname:'UnitedHealth Group Inc.',exchDisp:'NYSE'},{symbol:'JNJ',longname:'Johnson & Johnson',exchDisp:'NYSE'},
+  {symbol:'PG',longname:'Procter & Gamble Co.',exchDisp:'NYSE'},{symbol:'XOM',longname:'Exxon Mobil Corporation',exchDisp:'NYSE'},
+  {symbol:'CVX',longname:'Chevron Corporation',exchDisp:'NYSE'},{symbol:'LLY',longname:'Eli Lilly and Company',exchDisp:'NYSE'},
+  {symbol:'ABBV',longname:'AbbVie Inc.',exchDisp:'NYSE'},{symbol:'MRK',longname:'Merck & Co. Inc.',exchDisp:'NYSE'},
+  {symbol:'AMGN',longname:'Amgen Inc.',exchDisp:'NASDAQ'},{symbol:'GILD',longname:'Gilead Sciences Inc.',exchDisp:'NASDAQ'},
+  {symbol:'REGN',longname:'Regeneron Pharmaceuticals',exchDisp:'NASDAQ'},{symbol:'VRTX',longname:'Vertex Pharmaceuticals',exchDisp:'NASDAQ'},
+  {symbol:'TMO',longname:'Thermo Fisher Scientific',exchDisp:'NYSE'},{symbol:'DHR',longname:'Danaher Corporation',exchDisp:'NYSE'},
+  {symbol:'MDT',longname:'Medtronic plc',exchDisp:'NYSE'},{symbol:'ISRG',longname:'Intuitive Surgical Inc.',exchDisp:'NASDAQ'},
+  {symbol:'SYK',longname:'Stryker Corporation',exchDisp:'NYSE'},{symbol:'BAC',longname:'Bank of America Corp.',exchDisp:'NYSE'},
+  {symbol:'WFC',longname:'Wells Fargo & Company',exchDisp:'NYSE'},{symbol:'GS',longname:'Goldman Sachs Group Inc.',exchDisp:'NYSE'},
+  {symbol:'MS',longname:'Morgan Stanley',exchDisp:'NYSE'},{symbol:'BLK',longname:'BlackRock Inc.',exchDisp:'NYSE'},
+  {symbol:'SPGI',longname:'S&P Global Inc.',exchDisp:'NYSE'},{symbol:'KO',longname:'Coca-Cola Company',exchDisp:'NYSE'},
+  {symbol:'PEP',longname:'PepsiCo Inc.',exchDisp:'NASDAQ'},{symbol:'PM',longname:'Philip Morris International',exchDisp:'NYSE'},
+  {symbol:'WMT',longname:'Walmart Inc.',exchDisp:'NYSE'},{symbol:'COST',longname:'Costco Wholesale Corp.',exchDisp:'NASDAQ'},
+  {symbol:'HD',longname:'Home Depot Inc.',exchDisp:'NYSE'},{symbol:'MCD',longname:'McDonald\'s Corporation',exchDisp:'NYSE'},
+  {symbol:'SBUX',longname:'Starbucks Corporation',exchDisp:'NASDAQ'},{symbol:'NKE',longname:'Nike Inc.',exchDisp:'NYSE'},
+  {symbol:'TGT',longname:'Target Corporation',exchDisp:'NYSE'},{symbol:'TXN',longname:'Texas Instruments',exchDisp:'NASDAQ'},
+  {symbol:'ACN',longname:'Accenture plc',exchDisp:'NYSE'},{symbol:'IBM',longname:'IBM Corporation',exchDisp:'NYSE'},
+  {symbol:'GE',longname:'GE Aerospace',exchDisp:'NYSE'},{symbol:'CAT',longname:'Caterpillar Inc.',exchDisp:'NYSE'},
+  {symbol:'RTX',longname:'RTX Corporation',exchDisp:'NYSE'},{symbol:'LMT',longname:'Lockheed Martin Corp.',exchDisp:'NYSE'},
+  {symbol:'NOC',longname:'Northrop Grumman Corp.',exchDisp:'NYSE'},{symbol:'BA',longname:'Boeing Company',exchDisp:'NYSE'},
+  {symbol:'LIN',longname:'Linde plc',exchDisp:'NASDAQ'},{symbol:'ABT',longname:'Abbott Laboratories',exchDisp:'NYSE'},
+  {symbol:'PLD',longname:'Prologis Inc.',exchDisp:'NYSE'},{symbol:'AMT',longname:'American Tower Corp.',exchDisp:'NYSE'},
+  {symbol:'NEE',longname:'NextEra Energy Inc.',exchDisp:'NYSE'},{symbol:'BKNG',longname:'Booking Holdings Inc.',exchDisp:'NASDAQ'},
+  {symbol:'CME',longname:'CME Group Inc.',exchDisp:'NASDAQ'},{symbol:'ICE',longname:'Intercontinental Exchange',exchDisp:'NYSE'},
+  {symbol:'SPCE',longname:'Virgin Galactic Holdings',exchDisp:'NYSE'},{symbol:'F',longname:'Ford Motor Company',exchDisp:'NYSE'},
+  {symbol:'GM',longname:'General Motors Company',exchDisp:'NYSE'},{symbol:'STLA',longname:'Stellantis N.V.',exchDisp:'NYSE'},
+  {symbol:'DIS',longname:'Walt Disney Company',exchDisp:'NYSE'},{symbol:'CMCSA',longname:'Comcast Corporation',exchDisp:'NASDAQ'},
+  {symbol:'T',longname:'AT&T Inc.',exchDisp:'NYSE'},{symbol:'VZ',longname:'Verizon Communications',exchDisp:'NYSE'},
+  {symbol:'TMUS',longname:'T-Mobile US Inc.',exchDisp:'NASDAQ'},{symbol:'AMZN',longname:'Amazon.com Inc.',exchDisp:'NASDAQ'},
+  // ── ETF ──
+  {symbol:'SPY',longname:'SPDR S&P 500 ETF',exchDisp:'NYSE ARCA'},{symbol:'QQQ',longname:'Invesco QQQ Trust',exchDisp:'NASDAQ'},
+  {symbol:'VOO',longname:'Vanguard S&P 500 ETF',exchDisp:'NYSE ARCA'},{symbol:'IVV',longname:'iShares Core S&P 500 ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'VTI',longname:'Vanguard Total Stock Market ETF',exchDisp:'NYSE ARCA'},{symbol:'DIA',longname:'SPDR Dow Jones ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'SCHD',longname:'Schwab US Dividend Equity ETF',exchDisp:'NYSE ARCA'},{symbol:'JEPI',longname:'JPMorgan Equity Premium Income ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'JEPQ',longname:'JPMorgan NASDAQ Equity Premium ETF',exchDisp:'NASDAQ'},{symbol:'GLD',longname:'SPDR Gold Shares',exchDisp:'NYSE ARCA'},
+  {symbol:'SLV',longname:'iShares Silver Trust',exchDisp:'NYSE ARCA'},{symbol:'TLT',longname:'iShares 20+ Year Treasury Bond ETF',exchDisp:'NASDAQ'},
+  {symbol:'HYG',longname:'iShares High Yield Corporate Bond ETF',exchDisp:'NYSE ARCA'},{symbol:'SOXL',longname:'Direxion Daily Semiconductor 3x Bull',exchDisp:'NYSE ARCA'},
+  {symbol:'SOXS',longname:'Direxion Daily Semiconductor 3x Bear',exchDisp:'NYSE ARCA'},{symbol:'TQQQ',longname:'ProShares UltraPro QQQ',exchDisp:'NASDAQ'},
+  {symbol:'UPRO',longname:'ProShares UltraPro S&P 500',exchDisp:'NYSE ARCA'},{symbol:'SPXL',longname:'Direxion Daily S&P 500 Bull 3x',exchDisp:'NYSE ARCA'},
+  {symbol:'ARKK',longname:'ARK Innovation ETF',exchDisp:'NYSE ARCA'},{symbol:'ARKG',longname:'ARK Genomic Revolution ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'ARKW',longname:'ARK Next Generation Internet ETF',exchDisp:'NYSE ARCA'},{symbol:'XLK',longname:'Technology Select Sector SPDR',exchDisp:'NYSE ARCA'},
+  {symbol:'XLF',longname:'Financial Select Sector SPDR',exchDisp:'NYSE ARCA'},{symbol:'XLE',longname:'Energy Select Sector SPDR',exchDisp:'NYSE ARCA'},
+  {symbol:'XLV',longname:'Health Care Select Sector SPDR',exchDisp:'NYSE ARCA'},{symbol:'XBI',longname:'SPDR S&P Biotech ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'SMH',longname:'VanEck Semiconductor ETF',exchDisp:'NASDAQ'},{symbol:'SOXX',longname:'iShares Semiconductor ETF',exchDisp:'NASDAQ'},
+  {symbol:'FNGU',longname:'MicroSectors FANG+ 3x Leveraged ETN',exchDisp:'NYSE ARCA'},{symbol:'BULZ',longname:'MicroSectors FANG Innovation 3x Leveraged ETN',exchDisp:'NYSE ARCA'},
+  {symbol:'TECL',longname:'Direxion Daily Technology Bull 3x',exchDisp:'NYSE ARCA'},{symbol:'LABU',longname:'Direxion Daily S&P Biotech Bull 3x',exchDisp:'NYSE ARCA'},
+  {symbol:'NAIL',longname:'Direxion Daily Homebuilders Bull 3x',exchDisp:'NYSE ARCA'},{symbol:'CURE',longname:'Direxion Daily Healthcare Bull 3x',exchDisp:'NYSE ARCA'},
+  // ── 암호화폐 ──
+  {symbol:'BTC-USD',longname:'Bitcoin USD',exchDisp:'CCC'},{symbol:'ETH-USD',longname:'Ethereum USD',exchDisp:'CCC'},
+  {symbol:'SOL-USD',longname:'Solana USD',exchDisp:'CCC'},{symbol:'XRP-USD',longname:'XRP USD',exchDisp:'CCC'},
+  {symbol:'ADA-USD',longname:'Cardano USD',exchDisp:'CCC'},{symbol:'DOGE-USD',longname:'Dogecoin USD',exchDisp:'CCC'},
+  {symbol:'AVAX-USD',longname:'Avalanche USD',exchDisp:'CCC'},{symbol:'DOT-USD',longname:'Polkadot USD',exchDisp:'CCC'},
+  {symbol:'LINK-USD',longname:'Chainlink USD',exchDisp:'CCC'},{symbol:'MATIC-USD',longname:'Polygon USD',exchDisp:'CCC'},
+  {symbol:'SHIB-USD',longname:'Shiba Inu USD',exchDisp:'CCC'},{symbol:'LTC-USD',longname:'Litecoin USD',exchDisp:'CCC'}
+];
+
+function searchLocal(q){
+  q=q.toLowerCase();
+  return LOCAL_STOCKS.filter(function(s){
+    return s.symbol.toLowerCase().indexOf(q)>=0||s.longname.toLowerCase().indexOf(q)>=0;
+  });
+}
+
+function renderDrop(qs,drop){
+  if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 티커 직접 입력하세요</div>';return;}
+  drop.innerHTML=qs.map(function(x){
+    var nm=(x.longname||x.shortname||x.symbol||'').replace(/"/g,'&quot;');
+    var sym=x.symbol||'';
+    var ex=x.exchDisp||'';
+    return '<div class="di" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds">'+sym+'</div></div>';
+  }).join('');
+}
+
 function goTab(name,el){
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on')});
   document.querySelectorAll('.ti').forEach(function(t){t.classList.remove('on')});
@@ -244,13 +426,13 @@ function goTab(name,el){
   el.classList.add('on');
   if(name==='sim')renderSim();
   if(name==='cagr')renderCagr();
-  if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://feeds.marketwatch.com/marketwatch/topstories/','n-mkt');loadRss('https://cointelegraph.com/rss','n-cry');loaded.news=true;}
+  if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://www.hankyung.com/feed/economy','n-mkt');loadRss('https://www.blockmedia.co.kr/feed/','n-cry');loaded.news=true;}
   if(name==='tech'&&!loaded.tech){
-    loadRss('https://venturebeat.com/category/ai/feed/','n-ai');
-    setTimeout(function(){loadRss('https://quantumcomputingreport.com/feed/','n-qt')},400);
-    setTimeout(function(){loadRss('https://semiengineering.com/feed/','n-semi')},800);
-    setTimeout(function(){loadRss('https://spectrum.ieee.org/feeds/topic/robotics.rss','n-rob')},1200);
-    setTimeout(function(){loadRss('https://www.nasaspaceflight.com/feed/','n-sp')},1600);
+    loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai');
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-qt')},400);
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-semi')},800);
+    setTimeout(function(){loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob')},1200);
+    setTimeout(function(){loadRss('https://www.mk.co.kr/rss/50400001/','n-sp')},1600);
     loaded.tech=true;
   }
 }
@@ -283,27 +465,63 @@ function onTickInput(val){
   var q=val.trim();
   if(!q){drop.style.display='none';return;}
   clearTimeout(searchTmr);
-  drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';
   drop.style.display='block';
+  var local=searchLocal(q);
+  if(local.length)renderDrop(local,drop);
+  else drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';
+
   searchTmr=setTimeout(function(){
-    var api='https://corsproxy.io/?url='+encodeURIComponent('https://query1.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=10&newsCount=0&enableFuzzyQuery=true');
-    fetch(api)
-    .then(function(r){return r.json()})
-    .then(function(d){
+    var isKoQ=!!((q.match(/[\uAC00-\uD7A3]/g)||[]).length);
+    // q를 raw로 넣어야 프록시에서 encodeURIComponent(yUrl) 할 때 한 번만 인코딩됨
+    var yUrlKo='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=ko-KR&region=KR';
+    var yUrlEn='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=en-US&region=US';
+    var yUrl=isKoQ?yUrlKo:yUrlEn;
+
+    function parseQ(d){
       var qs=[];
-      if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];
-      qs=qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,8);
-      if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 티커 직접 입력하세요</div>';return;}
-      drop.innerHTML=qs.map(function(x){
-        var nm=(x.longname||x.shortname||x.symbol||'').replace(/"/g,'&quot;');
-        var sym=x.symbol||'';
-        var ex=x.exchDisp||'';
-        return '<div class="di" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds">'+sym+'</div></div>';
-      }).join('');
-    }).catch(function(){
-      drop.innerHTML='<div class="dloading">검색 오류 — 티커 직접 입력하세요</div>';
+      try{if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];}catch(e){}
+      return qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,15);
+    }
+
+    var settled=false;
+    function done(qs){
+      if(settled)return;
+      settled=true;
+      if(qs&&qs.length){renderDrop(qs,drop);}
+      else{var fb=searchLocal(q);renderDrop(fb.length?fb:[],drop);}
+    }
+
+    // 3개 프록시 동시 요청 — 먼저 성공한 결과 사용
+    var reqs=[
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
+      fetch('https://corsproxy.io/?'+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(parseQ),
+      fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(parseQ)
+    ];
+    reqs.forEach(function(p){
+      p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
     });
-  },250);
+    // 한국어 검색이면 영어 URL로도 병행 시도
+    if(isKoQ){
+      var reqs2=[
+        fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrlEn))
+          .then(function(r){return r.json();})
+          .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
+        fetch('https://corsproxy.io/?'+encodeURIComponent(yUrlEn))
+          .then(function(r){return r.json();}).then(parseQ)
+      ];
+      reqs2.forEach(function(p){
+        p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
+      });
+    }
+    // 4초 후에도 결과 없으면 로컬 목록으로 대체
+    setTimeout(function(){if(!settled)done([]);},4000);
+  },300);
 }
 
 function pickTick(sym,nm){
@@ -331,7 +549,7 @@ function addStock(){
   if(!fq){toast('수량 또는 매수총액을 입력해주세요');return;}
   var p=curMode==='USD'?price*exRate:price;
   stocks.push({id:Date.now(),name:name,sym:sym,price:p,qty:fq});
-  saveS();renderStocks();renderCagr();
+  saveS();renderStocks();renderCagr();renderSim();
   ['i-name','i-tick','i-sym','i-price','i-qty','i-tot'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   toast('✅ '+name+' 등록 완료!');
 }
@@ -339,7 +557,7 @@ function addStock(){
 function delStock(id){
   if(!confirm('삭제할까요?'))return;
   stocks=stocks.filter(function(s){return s.id!==id;});
-  saveS();renderStocks();renderCagr();
+  saveS();renderStocks();renderCagr();renderSim();
 }
 
 function buyMore(id){
@@ -382,15 +600,132 @@ function renderCagr(){
   var el=document.getElementById('cagrlist');
   if(!stocks.length){el.innerHTML='<div class="ne">포트폴리오에 종목을 등록하면<br>자동으로 표시됩니다.</div>';return;}
   var h='';
-  stocks.forEach(function(s){
+  stocks.forEach(function(s,i){
     var c=s.sym&&CAGR[s.sym]?CAGR[s.sym]:(15+Math.random()*15).toFixed(1);
     var pct=Math.min(parseFloat(c),65)/65*100;
-    h+='<div class="ci"><div style="min-width:75px"><div style="font-size:13px;font-weight:700">'+s.name+'</div>'+(s.sym?'<div style="font-size:11px;color:#4f9eff">'+s.sym+'</div>':'')+'</div><div class="cbg"><div class="cbf" style="width:'+pct+'%"></div></div><div class="cp">+'+c+'%</div></div>';
+    var hasTick=s.sym?'onclick="showChart('+i+')" style="cursor:pointer"':'';
+    h+='<div class="ci" '+hasTick+'><div style="min-width:75px"><div style="font-size:13px;font-weight:700">'+s.name+'</div>'+(s.sym?'<div style="font-size:11px;color:#4f9eff">'+s.sym+'</div>':'<div style="font-size:10px;color:#4a5568">티커 없음</div>')+'</div><div class="cbg"><div class="cbf" style="width:'+pct+'%"></div></div><div class="cp">+'+c+'%</div>'+(s.sym?'<div style="font-size:12px;color:#4a5568;margin-left:4px;flex-shrink:0">📈</div>':'')+'</div>';
   });
   el.innerHTML=h;
 }
 
+// ── 차트 ──────────────────────────────────────
+var chartObj=null,chartSeries=null,chartSym='',chartInterval='1mo',chartLoading=false;
+
+function showChart(idx){
+  var s=stocks[idx];
+  if(!s||!s.sym){toast('티커가 없는 종목은 차트를 볼 수 없어요');return;}
+  var box=document.getElementById('chartbox');
+  box.style.display='block';
+  document.getElementById('chartlabel').textContent=s.name+' ('+s.sym+')';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+  chartInterval='1mo';
+  if(typeof LightweightCharts==='undefined'){
+    document.getElementById('chartloading').style.display='block';
+    var sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
+    sc.onload=function(){_initChart();_loadChart(s.sym,'1mo');};
+    document.head.appendChild(sc);
+    return;
+  }
+  if(!chartObj)_initChart();
+  _loadChart(s.sym,'1mo');
+}
+
+function _initChart(){
+  if(chartObj)return;
+  var el=document.getElementById('chartdiv');
+  chartObj=LightweightCharts.createChart(el,{
+    width:el.clientWidth||window.innerWidth-28,
+    height:240,
+    layout:{background:{type:'solid',color:'#1e2330'},textColor:'#8892a4'},
+    grid:{vertLines:{color:'#2a3045'},horzLines:{color:'#2a3045'}},
+    crosshair:{mode:1},
+    rightPriceScale:{borderColor:'#2a3045'},
+    timeScale:{borderColor:'#2a3045',timeVisible:true,secondsVisible:false},
+    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
+    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
+  });
+  chartSeries=chartObj.addCandlestickSeries({
+    upColor:'#00e5b0',downColor:'#ff4d6d',
+    borderUpColor:'#00e5b0',borderDownColor:'#ff4d6d',
+    wickUpColor:'#00e5b0',wickDownColor:'#ff4d6d'
+  });
+  chartObj.timeScale().subscribeVisibleLogicalRangeChange(function(range){
+    if(!range||chartLoading)return;
+    var bars=range.to-range.from;
+    // 핀치 확대 시 더 세밀한 봉으로 전환
+    if(chartInterval==='1mo'&&bars<18)_switchInterval('1d');
+    else if(chartInterval==='1d'&&bars<35)_switchInterval('1h');
+    // 핀치 축소 시 더 큰 단위로 전환
+    else if(chartInterval==='1h'&&bars>130)_switchInterval('1d');
+    else if(chartInterval==='1d'&&bars>210)_switchInterval('1mo');
+  });
+  window.addEventListener('resize',function(){
+    if(chartObj)chartObj.applyOptions({width:document.getElementById('chartdiv').clientWidth||window.innerWidth-28});
+  });
+}
+
+function _switchInterval(iv){
+  if(chartInterval===iv||chartLoading)return;
+  _loadChart(chartSym,iv);
+}
+
+function _loadChart(sym,iv){
+  if(!sym)return;
+  chartSym=sym;chartInterval=iv;chartLoading=true;
+  var rangeMap={'1mo':'5y','1d':'1y','1h':'1mo'};
+  var lblMap={'1mo':'월봉 5년 — 핀치 확대 시 일봉 전환','1d':'일봉 1년 — 더 확대 시 시간봉 전환','1h':'시간봉 1달 — 축소 시 일봉 전환'};
+  document.getElementById('chartperiod').textContent=lblMap[iv]||'';
+  document.getElementById('chartloading').style.display='block';
+  var url='https://query2.finance.yahoo.com/v8/finance/chart/'+sym+'?interval='+iv+'&range='+rangeMap[iv];
+  var settled=false;
+  function onData(raw){
+    if(settled)return;
+    var data={};try{data=typeof raw==='string'?JSON.parse(raw):raw;}catch(e){}
+    try{
+      var res=data.chart.result[0];
+      var ts=res.timestamp;
+      var q=res.indicators.quote[0];
+      var candles=ts.map(function(t,i){
+        var o=q.open[i],h=q.high[i],l=q.low[i],c=q.close[i];
+        if(o==null||h==null||l==null||c==null)return null;
+        return {time:t,open:+o.toFixed(4),high:+h.toFixed(4),low:+l.toFixed(4),close:+c.toFixed(4)};
+      }).filter(Boolean);
+      if(candles.length){
+        settled=true;
+        chartSeries.setData(candles);
+        chartObj.timeScale().fitContent();
+      }
+    }catch(e){}
+    if(settled){chartLoading=false;document.getElementById('chartloading').style.display='none';}
+  }
+  fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(function(d){onData(d.contents||'{}');})
+    .catch(function(){});
+  fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(onData)
+    .catch(function(){});
+  setTimeout(function(){
+    if(!settled){settled=true;chartLoading=false;document.getElementById('chartloading').style.display='none';}
+  },6000);
+}
+// ─────────────────────────────────────────────
+
 var R2J='https://api.rss2json.com/v1/api.json?rss_url=';
+
+function isKo(t){return((t||'').match(/[\uAC00-\uD7A3]/g)||[]).length>3;}
+function trTitle(title,cb){
+  if(!title){cb('');return;}
+  if(isKo(title)){cb(title);return;}
+  fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(title.slice(0,400))+'&langpair=en|ko')
+  .then(function(r){return r.json();})
+  .then(function(d){cb((d.responseData&&d.responseData.translatedText&&isKo(d.responseData.translatedText))?d.responseData.translatedText:title);})
+  .catch(function(){cb(title);});
+}
+
 function loadRss(url,elId){
   var el=document.getElementById(elId);
   el.innerHTML='<div class="nl">📰 불러오는 중...</div>';
@@ -399,11 +734,20 @@ function loadRss(url,elId){
   .then(function(d){
     var items=(d.status==='ok'&&d.items)?d.items.slice(0,5):[];
     if(!items.length){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';return;}
-    el.innerHTML=items.map(function(it){
-      var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
-      var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
-      return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(it.title||'')+'</div><div class="nd">'+dt+'</div></a>';
-    }).join('');
+    var titles=items.map(function(it){return it.title||'';});
+    var done=0,translated=new Array(titles.length);
+    titles.forEach(function(t,i){
+      trTitle(t,function(ko){
+        translated[i]=ko;done++;
+        if(done===titles.length){
+          el.innerHTML=items.map(function(it,j){
+            var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
+            var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
+            return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(translated[j]||'')+'</div><div class="nd">'+dt+'</div></a>';
+          }).join('');
+        }
+      });
+    });
   }).catch(function(){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';});
 }
 
@@ -415,7 +759,7 @@ function loadPfNews(){
   var top=has.sort(function(a,b){return(b.price*b.qty)-(a.price*a.qty);}).slice(0,3);
   var all=[],done=0;
   top.forEach(function(s){
-    fetch(R2J+encodeURIComponent('https://feeds.finance.yahoo.com/rss/2.0/headline?s='+s.sym+'&region=US&lang=en-US'))
+    fetch(R2J+encodeURIComponent('https://feeds.finance.yahoo.com/rss/2.0/headline?s='+s.sym+'&region=KR&lang=ko-KR'))
     .then(function(r){return r.json()})
     .then(function(d){
       var items=(d.status==='ok'&&d.items)?d.items.slice(0,3):[];
@@ -426,11 +770,20 @@ function loadPfNews(){
       done++;
       if(done===top.length){
         if(!all.length){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';return;}
-        el.innerHTML=all.map(function(it){
-          var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
-          var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
-          return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="ntg">'+it._tag+'</div><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(it.title||'')+'</div><div class="nd">'+dt+'</div></a>';
-        }).join('');
+        var pfTitles=all.map(function(it){return it.title||'';});
+        var td=0,pfTr=new Array(pfTitles.length);
+        pfTitles.forEach(function(t,i){
+          trTitle(t,function(ko){
+            pfTr[i]=ko;td++;
+            if(td===pfTitles.length){
+              el.innerHTML=all.map(function(it,j){
+                var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
+                var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
+                return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="ntg">'+it._tag+'</div><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(pfTr[j]||'')+'</div><div class="nd">'+dt+'</div></a>';
+              }).join('');
+            }
+          });
+        });
       }
     });
   });
@@ -446,6 +799,12 @@ function renderSim(){
   document.getElementById('sp4').textContent=fk(sim.addFrom)+'원 ✏️';
   document.getElementById('sp5').textContent=sim.addFromYear+'년차 ✏️';
   document.getElementById('sp6').textContent=sim.divRate+'% ✏️';
+  if(!org){
+    document.getElementById('simres').innerHTML=[1,3,5,7,10,15,20].map(function(y){
+      return '<div class="rc"><div class="ry">'+y+'년 후</div><div class="ra" style="color:#4a5568">₩0</div><div class="rd">종목 등록 필요</div></div>';
+    }).join('');
+    return;
+  }
   var r=sim.rate/100,dv=sim.divRate/100,a=org,res=[];
   for(var y=1;y<=20;y++){
     var ex=y>=sim.addFromYear?sim.addFrom:0;
@@ -495,6 +854,7 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 
 renderStocks();
 renderCagr();
+renderSim();
 </script>
 </body>
 </html>
