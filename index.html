@@ -177,21 +177,21 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div id="n-pf"><div class="ne">포트폴리오에 티커가 있는 종목을<br>등록하면 뉴스가 자동으로 뜹니다.</div></div>
   </div>
   <div class="ns">
-    <div class="nt">🌍 글로벌 증시 <button class="rb2" onclick="loadRss('https://feeds.marketwatch.com/marketwatch/topstories/','n-mkt')">🔄</button></div>
+    <div class="nt">🌍 글로벌 증시 <button class="rb2" onclick="loadRss('https://www.hankyung.com/feed/economy','n-mkt')">🔄</button></div>
     <div id="n-mkt"><div class="nl">불러오는 중...</div></div>
   </div>
   <div class="ns">
-    <div class="nt">🛢️ 암호화폐 <button class="rb2" onclick="loadRss('https://cointelegraph.com/rss','n-cry')">🔄</button></div>
+    <div class="nt">🛢️ 암호화폐 <button class="rb2" onclick="loadRss('https://www.blockmedia.co.kr/feed/','n-cry')">🔄</button></div>
     <div id="n-cry"><div class="nl">불러오는 중...</div></div>
   </div>
 </div>
 
 <div class="pg" id="p-tech">
-  <div class="ns"><div class="nt">🤖 AI / 인공지능 <button class="rb2" onclick="loadRss('https://venturebeat.com/category/ai/feed/','n-ai')">🔄</button></div><div id="n-ai"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">⚛️ 양자컴퓨터 <button class="rb2" onclick="loadRss('https://quantumcomputingreport.com/feed/','n-qt')">🔄</button></div><div id="n-qt"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🏭 반도체 <button class="rb2" onclick="loadRss('https://semiengineering.com/feed/','n-semi')">🔄</button></div><div id="n-semi"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🤖 로봇 / 자율주행 <button class="rb2" onclick="loadRss('https://spectrum.ieee.org/feeds/topic/robotics.rss','n-rob')">🔄</button></div><div id="n-rob"><div class="nl">불러오는 중...</div></div></div>
-  <div class="ns"><div class="nt">🚀 우주 / 바이오 <button class="rb2" onclick="loadRss('https://www.nasaspaceflight.com/feed/','n-sp')">🔄</button></div><div id="n-sp"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🤖 AI / 인공지능 <button class="rb2" onclick="loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai')">🔄</button></div><div id="n-ai"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">⚛️ 양자컴퓨터 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-qt')">🔄</button></div><div id="n-qt"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🏭 반도체 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-semi')">🔄</button></div><div id="n-semi"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🤖 로봇 / 자율주행 <button class="rb2" onclick="loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob')">🔄</button></div><div id="n-rob"><div class="nl">불러오는 중...</div></div></div>
+  <div class="ns"><div class="nt">🚀 우주 / 바이오 <button class="rb2" onclick="loadRss('https://www.mk.co.kr/rss/50400001/','n-sp')">🔄</button></div><div id="n-sp"><div class="nl">불러오는 중...</div></div></div>
 </div>
 
 <div class="pg" id="p-sim">
@@ -237,6 +237,61 @@ var exRate=1350,curMode='KRW',mKey='';
 var sim=JSON.parse(localStorage.getItem('wc_sim')||'null')||{rate:7,daily:60000,monthly:1000000,addFrom:10000000,addFromYear:7,divRate:5};
 var loaded={},searchTmr=null;
 
+var LOCAL_STOCKS=[
+  {symbol:'005930.KS',longname:'삼성전자',exchDisp:'KRX'},
+  {symbol:'000660.KS',longname:'SK하이닉스',exchDisp:'KRX'},
+  {symbol:'035420.KS',longname:'NAVER',exchDisp:'KRX'},
+  {symbol:'035720.KS',longname:'카카오',exchDisp:'KRX'},
+  {symbol:'005380.KS',longname:'현대차',exchDisp:'KRX'},
+  {symbol:'051910.KS',longname:'LG화학',exchDisp:'KRX'},
+  {symbol:'006400.KS',longname:'삼성SDI',exchDisp:'KRX'},
+  {symbol:'207940.KS',longname:'삼성바이오로직스',exchDisp:'KRX'},
+  {symbol:'068270.KS',longname:'셀트리온',exchDisp:'KRX'},
+  {symbol:'373220.KS',longname:'LG에너지솔루션',exchDisp:'KRX'},
+  {symbol:'000270.KS',longname:'기아',exchDisp:'KRX'},
+  {symbol:'012330.KS',longname:'현대모비스',exchDisp:'KRX'},
+  {symbol:'AAPL',longname:'Apple Inc.',exchDisp:'NASDAQ'},
+  {symbol:'MSFT',longname:'Microsoft Corporation',exchDisp:'NASDAQ'},
+  {symbol:'NVDA',longname:'NVIDIA Corporation',exchDisp:'NASDAQ'},
+  {symbol:'GOOGL',longname:'Alphabet Inc.',exchDisp:'NASDAQ'},
+  {symbol:'AMZN',longname:'Amazon.com Inc.',exchDisp:'NASDAQ'},
+  {symbol:'TSLA',longname:'Tesla Inc.',exchDisp:'NASDAQ'},
+  {symbol:'META',longname:'Meta Platforms Inc.',exchDisp:'NASDAQ'},
+  {symbol:'NFLX',longname:'Netflix Inc.',exchDisp:'NASDAQ'},
+  {symbol:'AMD',longname:'Advanced Micro Devices',exchDisp:'NASDAQ'},
+  {symbol:'INTC',longname:'Intel Corporation',exchDisp:'NASDAQ'},
+  {symbol:'QCOM',longname:'Qualcomm Inc.',exchDisp:'NASDAQ'},
+  {symbol:'TSM',longname:'Taiwan Semiconductor',exchDisp:'NYSE'},
+  {symbol:'PLTR',longname:'Palantir Technologies',exchDisp:'NYSE'},
+  {symbol:'SOFI',longname:'SoFi Technologies',exchDisp:'NASDAQ'},
+  {symbol:'IONQ',longname:'IonQ Inc.',exchDisp:'NYSE'},
+  {symbol:'SPY',longname:'SPDR S&P 500 ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'QQQ',longname:'Invesco QQQ Trust',exchDisp:'NASDAQ'},
+  {symbol:'VOO',longname:'Vanguard S&P 500 ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'SCHD',longname:'Schwab US Dividend Equity ETF',exchDisp:'NYSE ARCA'},
+  {symbol:'SOXL',longname:'Direxion Daily Semiconductor 3x Bull',exchDisp:'NYSE ARCA'},
+  {symbol:'TQQQ',longname:'ProShares UltraPro QQQ',exchDisp:'NASDAQ'},
+  {symbol:'BTC-USD',longname:'Bitcoin',exchDisp:'CCC'},
+  {symbol:'ETH-USD',longname:'Ethereum',exchDisp:'CCC'}
+];
+
+function searchLocal(q){
+  q=q.toLowerCase();
+  return LOCAL_STOCKS.filter(function(s){
+    return s.symbol.toLowerCase().indexOf(q)>=0||s.longname.toLowerCase().indexOf(q)>=0;
+  });
+}
+
+function renderDrop(qs,drop){
+  if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 티커 직접 입력하세요</div>';return;}
+  drop.innerHTML=qs.map(function(x){
+    var nm=(x.longname||x.shortname||x.symbol||'').replace(/"/g,'&quot;');
+    var sym=x.symbol||'';
+    var ex=x.exchDisp||'';
+    return '<div class="di" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds">'+sym+'</div></div>';
+  }).join('');
+}
+
 function goTab(name,el){
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on')});
   document.querySelectorAll('.ti').forEach(function(t){t.classList.remove('on')});
@@ -244,13 +299,13 @@ function goTab(name,el){
   el.classList.add('on');
   if(name==='sim')renderSim();
   if(name==='cagr')renderCagr();
-  if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://feeds.marketwatch.com/marketwatch/topstories/','n-mkt');loadRss('https://cointelegraph.com/rss','n-cry');loaded.news=true;}
+  if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://www.hankyung.com/feed/economy','n-mkt');loadRss('https://www.blockmedia.co.kr/feed/','n-cry');loaded.news=true;}
   if(name==='tech'&&!loaded.tech){
-    loadRss('https://venturebeat.com/category/ai/feed/','n-ai');
-    setTimeout(function(){loadRss('https://quantumcomputingreport.com/feed/','n-qt')},400);
-    setTimeout(function(){loadRss('https://semiengineering.com/feed/','n-semi')},800);
-    setTimeout(function(){loadRss('https://spectrum.ieee.org/feeds/topic/robotics.rss','n-rob')},1200);
-    setTimeout(function(){loadRss('https://www.nasaspaceflight.com/feed/','n-sp')},1600);
+    loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai');
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-qt')},400);
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-semi')},800);
+    setTimeout(function(){loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob')},1200);
+    setTimeout(function(){loadRss('https://www.mk.co.kr/rss/50400001/','n-sp')},1600);
     loaded.tech=true;
   }
 }
@@ -283,27 +338,35 @@ function onTickInput(val){
   var q=val.trim();
   if(!q){drop.style.display='none';return;}
   clearTimeout(searchTmr);
-  drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';
   drop.style.display='block';
+  // 즉시 로컬 결과 표시
+  var local=searchLocal(q);
+  if(local.length){renderDrop(local,drop);}
+  else{drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';}
   searchTmr=setTimeout(function(){
-    var api='https://corsproxy.io/?url='+encodeURIComponent('https://query1.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=10&newsCount=0&enableFuzzyQuery=true');
-    fetch(api)
-    .then(function(r){return r.json()})
-    .then(function(d){
+    var yUrl='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=10&newsCount=0&enableFuzzyQuery=true';
+    function handleData(d){
       var qs=[];
       if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];
       qs=qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,8);
-      if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 티커 직접 입력하세요</div>';return;}
-      drop.innerHTML=qs.map(function(x){
-        var nm=(x.longname||x.shortname||x.symbol||'').replace(/"/g,'&quot;');
-        var sym=x.symbol||'';
-        var ex=x.exchDisp||'';
-        return '<div class="di" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds">'+sym+'</div></div>';
-      }).join('');
-    }).catch(function(){
-      drop.innerHTML='<div class="dloading">검색 오류 — 티커 직접 입력하세요</div>';
-    });
-  },250);
+      if(!qs.length){renderDrop(searchLocal(q),drop);return;}
+      renderDrop(qs,drop);
+    }
+    function tryCorsproxy(){
+      fetch('https://corsproxy.io/?'+encodeURIComponent(yUrl))
+      .then(function(r){return r.json();})
+      .then(function(d){handleData(d);})
+      .catch(function(){renderDrop(searchLocal(q),drop);});
+    }
+    fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var parsed={};
+      try{parsed=JSON.parse(d.contents||'{}');}catch(e){}
+      if(parsed&&parsed.finance){handleData(parsed);}else{tryCorsproxy();}
+    })
+    .catch(function(){tryCorsproxy();});
+  },350);
 }
 
 function pickTick(sym,nm){
@@ -331,7 +394,7 @@ function addStock(){
   if(!fq){toast('수량 또는 매수총액을 입력해주세요');return;}
   var p=curMode==='USD'?price*exRate:price;
   stocks.push({id:Date.now(),name:name,sym:sym,price:p,qty:fq});
-  saveS();renderStocks();renderCagr();
+  saveS();renderStocks();renderCagr();renderSim();
   ['i-name','i-tick','i-sym','i-price','i-qty','i-tot'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   toast('✅ '+name+' 등록 완료!');
 }
@@ -339,7 +402,7 @@ function addStock(){
 function delStock(id){
   if(!confirm('삭제할까요?'))return;
   stocks=stocks.filter(function(s){return s.id!==id;});
-  saveS();renderStocks();renderCagr();
+  saveS();renderStocks();renderCagr();renderSim();
 }
 
 function buyMore(id){
@@ -391,6 +454,17 @@ function renderCagr(){
 }
 
 var R2J='https://api.rss2json.com/v1/api.json?rss_url=';
+
+function isKo(t){return((t||'').match(/[\uAC00-\uD7A3]/g)||[]).length>3;}
+function trTitle(title,cb){
+  if(!title){cb('');return;}
+  if(isKo(title)){cb(title);return;}
+  fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(title.slice(0,400))+'&langpair=en|ko')
+  .then(function(r){return r.json();})
+  .then(function(d){cb((d.responseData&&d.responseData.translatedText&&isKo(d.responseData.translatedText))?d.responseData.translatedText:title);})
+  .catch(function(){cb(title);});
+}
+
 function loadRss(url,elId){
   var el=document.getElementById(elId);
   el.innerHTML='<div class="nl">📰 불러오는 중...</div>';
@@ -399,11 +473,20 @@ function loadRss(url,elId){
   .then(function(d){
     var items=(d.status==='ok'&&d.items)?d.items.slice(0,5):[];
     if(!items.length){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';return;}
-    el.innerHTML=items.map(function(it){
-      var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
-      var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
-      return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(it.title||'')+'</div><div class="nd">'+dt+'</div></a>';
-    }).join('');
+    var titles=items.map(function(it){return it.title||'';});
+    var done=0,translated=new Array(titles.length);
+    titles.forEach(function(t,i){
+      trTitle(t,function(ko){
+        translated[i]=ko;done++;
+        if(done===titles.length){
+          el.innerHTML=items.map(function(it,j){
+            var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
+            var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
+            return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(translated[j]||'')+'</div><div class="nd">'+dt+'</div></a>';
+          }).join('');
+        }
+      });
+    });
   }).catch(function(){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';});
 }
 
@@ -415,7 +498,7 @@ function loadPfNews(){
   var top=has.sort(function(a,b){return(b.price*b.qty)-(a.price*a.qty);}).slice(0,3);
   var all=[],done=0;
   top.forEach(function(s){
-    fetch(R2J+encodeURIComponent('https://feeds.finance.yahoo.com/rss/2.0/headline?s='+s.sym+'&region=US&lang=en-US'))
+    fetch(R2J+encodeURIComponent('https://feeds.finance.yahoo.com/rss/2.0/headline?s='+s.sym+'&region=KR&lang=ko-KR'))
     .then(function(r){return r.json()})
     .then(function(d){
       var items=(d.status==='ok'&&d.items)?d.items.slice(0,3):[];
@@ -426,11 +509,20 @@ function loadPfNews(){
       done++;
       if(done===top.length){
         if(!all.length){el.innerHTML='<div class="ne">뉴스를 불러오지 못했습니다.</div>';return;}
-        el.innerHTML=all.map(function(it){
-          var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
-          var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
-          return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="ntg">'+it._tag+'</div><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(it.title||'')+'</div><div class="nd">'+dt+'</div></a>';
-        }).join('');
+        var pfTitles=all.map(function(it){return it.title||'';});
+        var td=0,pfTr=new Array(pfTitles.length);
+        pfTitles.forEach(function(t,i){
+          trTitle(t,function(ko){
+            pfTr[i]=ko;td++;
+            if(td===pfTitles.length){
+              el.innerHTML=all.map(function(it,j){
+                var src=(it.author||it.creator||'뉴스').replace(/<[^>]*>/g,'').trim().slice(0,30);
+                var dt=it.pubDate?new Date(it.pubDate).toLocaleDateString('ko-KR'):'';
+                return '<a class="nc" href="'+(it.link||'#')+'" target="_blank" rel="noopener"><div class="ntg">'+it._tag+'</div><div class="nsr">'+src.toUpperCase()+'</div><div class="nth">'+(pfTr[j]||'')+'</div><div class="nd">'+dt+'</div></a>';
+              }).join('');
+            }
+          });
+        });
       }
     });
   });
@@ -495,6 +587,7 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 
 renderStocks();
 renderCagr();
+renderSim();
 </script>
 </body>
 </html>
