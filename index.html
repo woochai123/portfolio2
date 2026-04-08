@@ -410,12 +410,13 @@ function searchLocal(q){
 }
 
 function renderDrop(qs,drop){
-  if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 티커 직접 입력하세요</div>';return;}
+  if(!qs.length){drop.innerHTML='<div class="dloading">결과 없음 — 아래 직접 추가를 이용하세요</div>';return;}
   drop.innerHTML=qs.map(function(x){
     var nm=(x.longname||x.shortname||x.symbol||'').replace(/"/g,'&quot;');
     var sym=x.symbol||'';
     var ex=x.exchDisp||'';
-    return '<div class="di" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds">'+sym+'</div></div>';
+    var directStyle=x._direct?'background:rgba(79,158,255,.08);border-top:1px solid #2a3045':'';
+    return '<div class="di" style="'+directStyle+'" onclick="pickTick(\''+sym+'\',\''+nm.replace(/'/g,"\\'")+'\')"><div style="flex:1;min-width:0"><div class="dn2">'+(x._direct?'<span style="color:#4f9eff;margin-right:4px">＋</span>':'')+nm+'</div><div class="dt">'+ex+'</div></div><div class="ds" style="'+(x._direct?'color:#4f9eff':'')+'">'+sym+'</div></div>';
   }).join('');
 }
 
@@ -483,15 +484,25 @@ function onTickInput(val){
       return qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,15);
     }
 
+    // 티커 형식이면 "직접 추가" 옵션 준비
+    var isTicker=/^[A-Za-z][A-Za-z0-9\.\-]{0,11}$/.test(q);
+    function withDirect(list){
+      if(!isTicker)return list;
+      var sym=q.toUpperCase();
+      var already=list.some(function(r){return(r.symbol||'').toUpperCase()===sym;});
+      if(already)return list;
+      return list.concat([{symbol:sym,longname:sym+' — 직접 추가 (티커 직접 등록)',exchDisp:'직접입력',_direct:true}]);
+    }
+
     var settled=false;
     function done(qs){
       if(settled)return;
       settled=true;
-      if(qs&&qs.length){renderDrop(qs,drop);}
-      else{var fb=searchLocal(q);renderDrop(fb.length?fb:[],drop);}
+      var list=(qs&&qs.length)?qs:searchLocal(q);
+      renderDrop(withDirect(list),drop);
     }
 
-    // 3개 프록시 동시 요청 — 먼저 성공한 결과 사용
+    // 4개 프록시 동시 요청 — 먼저 성공한 결과 사용
     var reqs=[
       fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
         .then(function(r){return r.json();})
@@ -500,6 +511,9 @@ function onTickInput(val){
         .then(function(r){return r.json();})
         .then(parseQ),
       fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(parseQ),
+      fetch('https://thingproxy.freeboard.io/fetch/'+yUrl)
         .then(function(r){return r.json();})
         .then(parseQ)
     ];
