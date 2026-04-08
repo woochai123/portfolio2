@@ -277,12 +277,25 @@ var LOCAL_STOCKS=[
   {symbol:'011170.KS',longname:'롯데케미칼',exchDisp:'KRX'},{symbol:'011200.KS',longname:'HMM',exchDisp:'KRX'},
   {symbol:'003490.KS',longname:'대한항공',exchDisp:'KRX'},{symbol:'010620.KS',longname:'현대중공업',exchDisp:'KRX'},
   {symbol:'042660.KS',longname:'한화오션',exchDisp:'KRX'},{symbol:'009540.KS',longname:'HD한국조선해양',exchDisp:'KRX'},
-  {symbol:'267250.KS',longname:'HD현대',exchDisp:'KRX'},{symbol:'000720.KS',longname:'현대건설',exchDisp:'KRX'},
+  {symbol:'267250.KS',longname:'HD현대',exchDisp:'KRX'},{symbol:'329180.KS',longname:'HD현대중공업',exchDisp:'KRX'},
+  {symbol:'267260.KS',longname:'HD현대일렉트릭',exchDisp:'KRX'},{symbol:'267270.KS',longname:'HD현대건설기계',exchDisp:'KRX'},
+  {symbol:'042670.KS',longname:'HD현대인프라코어',exchDisp:'KRX'},{symbol:'443060.KS',longname:'HD현대마린솔루션',exchDisp:'KRX'},
+  {symbol:'000720.KS',longname:'현대건설',exchDisp:'KRX'},
   {symbol:'028050.KS',longname:'삼성엔지니어링',exchDisp:'KRX'},{symbol:'047810.KS',longname:'한국항공우주',exchDisp:'KRX'},
   {symbol:'010140.KS',longname:'삼성중공업',exchDisp:'KRX'},{symbol:'071050.KS',longname:'한국금융지주',exchDisp:'KRX'},
   {symbol:'000880.KS',longname:'한화',exchDisp:'KRX'},{symbol:'079550.KS',longname:'LIG넥스원',exchDisp:'KRX'},
   {symbol:'003230.KS',longname:'삼양식품',exchDisp:'KRX'},{symbol:'097950.KS',longname:'CJ제일제당',exchDisp:'KRX'},
   {symbol:'004370.KS',longname:'농심',exchDisp:'KRX'},{symbol:'005935.KS',longname:'삼성전자우',exchDisp:'KRX'},
+  {symbol:'034220.KS',longname:'LG디스플레이',exchDisp:'KRX'},{symbol:'011070.KS',longname:'LG이노텍',exchDisp:'KRX'},
+  {symbol:'032640.KS',longname:'LG유플러스',exchDisp:'KRX'},{symbol:'018260.KS',longname:'삼성SDS',exchDisp:'KRX'},
+  {symbol:'302440.KS',longname:'SK바이오사이언스',exchDisp:'KRX'},{symbol:'402340.KS',longname:'SK스퀘어',exchDisp:'KRX'},
+  {symbol:'293490.KQ',longname:'카카오게임즈',exchDisp:'KOSDAQ'},{symbol:'009830.KS',longname:'한화솔루션',exchDisp:'KRX'},
+  {symbol:'241560.KS',longname:'두산밥캣',exchDisp:'KRX'},{symbol:'004020.KS',longname:'현대제철',exchDisp:'KRX'},
+  {symbol:'005830.KS',longname:'DB손해보험',exchDisp:'KRX'},{symbol:'032830.KS',longname:'삼성생명',exchDisp:'KRX'},
+  {symbol:'139480.KS',longname:'이마트',exchDisp:'KRX'},{symbol:'023530.KS',longname:'롯데쇼핑',exchDisp:'KRX'},
+  {symbol:'069960.KS',longname:'현대백화점',exchDisp:'KRX'},{symbol:'271560.KS',longname:'오리온',exchDisp:'KRX'},
+  {symbol:'007070.KS',longname:'GS리테일',exchDisp:'KRX'},{symbol:'078930.KS',longname:'GS',exchDisp:'KRX'},
+  {symbol:'001570.KS',longname:'금양',exchDisp:'KRX'},{symbol:'055490.KS',longname:'포스코DX',exchDisp:'KRX'},
   // KOSDAQ
   {symbol:'247540.KQ',longname:'에코프로비엠',exchDisp:'KOSDAQ'},{symbol:'086520.KQ',longname:'에코프로',exchDisp:'KOSDAQ'},
   {symbol:'028300.KQ',longname:'HLB',exchDisp:'KOSDAQ'},{symbol:'196170.KQ',longname:'알테오젠',exchDisp:'KOSDAQ'},
@@ -459,9 +472,9 @@ function onTickInput(val){
 
   searchTmr=setTimeout(function(){
     var isKoQ=!!((q.match(/[\uAC00-\uD7A3]/g)||[]).length);
-    // 한국어 검색은 KR 리전 우선, 영어는 US 리전
-    var yUrlKo='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=ko-KR&region=KR';
-    var yUrlEn='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=en-US&region=US';
+    // q를 raw로 넣어야 프록시에서 encodeURIComponent(yUrl) 할 때 한 번만 인코딩됨
+    var yUrlKo='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=ko-KR&region=KR';
+    var yUrlEn='https://query2.finance.yahoo.com/v1/finance/search?q='+q+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=en-US&region=US';
     var yUrl=isKoQ?yUrlKo:yUrlEn;
 
     function parseQ(d){
