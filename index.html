@@ -441,34 +441,62 @@ function onTickInput(val){
   if(!q){drop.style.display='none';return;}
   clearTimeout(searchTmr);
   drop.style.display='block';
-  // 즉시 로컬 결과 표시
   var local=searchLocal(q);
-  if(local.length){renderDrop(local,drop);}
-  else{drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';}
+  if(local.length)renderDrop(local,drop);
+  else drop.innerHTML='<div class="dloading">🔍 검색 중...</div>';
+
   searchTmr=setTimeout(function(){
-    var yUrl='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=10&newsCount=0&enableFuzzyQuery=true';
-    function handleData(d){
+    var isKoQ=!!((q.match(/[\uAC00-\uD7A3]/g)||[]).length);
+    // 한국어 검색은 KR 리전 우선, 영어는 US 리전
+    var yUrlKo='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=ko-KR&region=KR';
+    var yUrlEn='https://query2.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(q)+'&quotesCount=20&newsCount=0&enableFuzzyQuery=true&lang=en-US&region=US';
+    var yUrl=isKoQ?yUrlKo:yUrlEn;
+
+    function parseQ(d){
       var qs=[];
-      if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];
-      qs=qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,8);
-      if(!qs.length){renderDrop(searchLocal(q),drop);return;}
-      renderDrop(qs,drop);
+      try{if(d&&d.finance&&d.finance.result&&d.finance.result[0])qs=d.finance.result[0].quotes||[];}catch(e){}
+      return qs.filter(function(x){return x.quoteType==='EQUITY'||x.quoteType==='ETF'||x.quoteType==='CRYPTOCURRENCY';}).slice(0,15);
     }
-    function tryCorsproxy(){
+
+    var settled=false;
+    function done(qs){
+      if(settled)return;
+      settled=true;
+      if(qs&&qs.length){renderDrop(qs,drop);}
+      else{var fb=searchLocal(q);renderDrop(fb.length?fb:[],drop);}
+    }
+
+    // 3개 프록시 동시 요청 — 먼저 성공한 결과 사용
+    var reqs=[
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
       fetch('https://corsproxy.io/?'+encodeURIComponent(yUrl))
-      .then(function(r){return r.json();})
-      .then(function(d){handleData(d);})
-      .catch(function(){renderDrop(searchLocal(q),drop);});
+        .then(function(r){return r.json();})
+        .then(parseQ),
+      fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(yUrl))
+        .then(function(r){return r.json();})
+        .then(parseQ)
+    ];
+    reqs.forEach(function(p){
+      p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
+    });
+    // 한국어 검색이면 영어 URL로도 병행 시도
+    if(isKoQ){
+      var reqs2=[
+        fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrlEn))
+          .then(function(r){return r.json();})
+          .then(function(d){var p={};try{p=JSON.parse(d.contents||'{}');}catch(e){}return parseQ(p);}),
+        fetch('https://corsproxy.io/?'+encodeURIComponent(yUrlEn))
+          .then(function(r){return r.json();}).then(parseQ)
+      ];
+      reqs2.forEach(function(p){
+        p.then(function(qs){if(!settled&&qs.length)done(qs);}).catch(function(){});
+      });
     }
-    fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yUrl))
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var parsed={};
-      try{parsed=JSON.parse(d.contents||'{}');}catch(e){}
-      if(parsed&&parsed.finance){handleData(parsed);}else{tryCorsproxy();}
-    })
-    .catch(function(){tryCorsproxy();});
-  },350);
+    // 4초 후에도 결과 없으면 로컬 목록으로 대체
+    setTimeout(function(){if(!settled)done([]);},4000);
+  },300);
 }
 
 function pickTick(sym,nm){
