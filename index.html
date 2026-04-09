@@ -402,11 +402,63 @@ var LOCAL_STOCKS=[
   {symbol:'SHIB-USD',longname:'Shiba Inu USD',exchDisp:'CCC'},{symbol:'LTC-USD',longname:'Litecoin USD',exchDisp:'CCC'}
 ];
 
+var KOR_ALIAS={
+  // 미국 빅테크
+  '엔비디아':'NVDA','애플':'AAPL','마이크로소프트':'MSFT','구글':'GOOGL','알파벳':'GOOGL',
+  '아마존':'AMZN','메타':'META','페이스북':'META','테슬라':'TSLA','넷플릭스':'NFLX',
+  '브로드컴':'AVGO','오라클':'ORCL','어도비':'ADBE','세일즈포스':'CRM','서비스나우':'NOW',
+  '인튜이트':'INTU','팔로알토':'PANW','크라우드스트라이크':'CRWD','클라우드플레어':'NET',
+  '스노우플레이크':'SNOW','데이터독':'DDOG','옥타':'OKTA','줌':'ZM','트윌리오':'TWLO',
+  // 반도체
+  '인텔':'INTC','퀄컴':'QCOM','시스코':'CSCO','AMD':'AMD','마이크론':'MU',
+  'TSMC':'TSM','대만반도체':'TSM','ASML':'ASML','ARM':'ARM',
+  '어플라이드머티리얼즈':'AMAT','램리서치':'LRCX','KLA':'KLAC','텍사스인스트루먼트':'TXN',
+  // 금융
+  'JP모건':'JPM','제이피모건':'JPM','골드만삭스':'GS','모건스탠리':'MS',
+  '뱅크오브아메리카':'BAC','웰스파고':'WFC','블랙록':'BLK','비자':'V','마스터카드':'MA',
+  // 소비재/헬스
+  '코카콜라':'KO','펩시코':'PEP','펩시':'PEP','월마트':'WMT','코스트코':'COST',
+  '홈디포':'HD','맥도날드':'MCD','스타벅스':'SBUX','나이키':'NKE','디즈니':'DIS',
+  '일라이릴리':'LLY','존슨앤존슨':'JNJ','화이자':'PFE','모더나':'MRNA',
+  '앱비':'ABBV','머크':'MRK','암젠':'AMGN','길리어드':'GILD',
+  '엑슨모빌':'XOM','셰브론':'CVX','버크셔해서웨이':'BRK-B','버크셔':'BRK-B',
+  // 성장주
+  '팔란티어':'PLTR','소파이':'SOFI','아이온큐':'IONQ','코인베이스':'COIN',
+  '마이크로스트래티지':'MSTR','리비안':'RIVN','루시드':'LCID','니오':'NIO',
+  '우버':'UBER','에어비앤비':'ABNB','쇼피파이':'SHOP','페이팔':'PYPL',
+  '스냅':'SNAP','핀터레스트':'PINS','로블록스':'RBLX','스포티파이':'SPOT',
+  '로켓랩':'RKLB','슈퍼마이크로':'SMCI','델':'DELL','IBM':'IBM',
+  // ETF
+  '나스닥':'QQQ','나스닥100':'QQQ','나스닥ETF':'QQQ','나스닥3배':'TQQQ',
+  'S&P500':'SPY','SP500':'SPY','반도체':'SOXL','반도체3배':'SOXL',
+  '배당':'SCHD','배당ETF':'SCHD','커버드콜':'JEPI','나스닥커버드콜':'JEPQ',
+  '금':'GLD','은':'SLV','채권':'TLT','바이오':'XBI','기술주':'XLK',
+  // 암호화폐
+  '비트코인':'BTC-USD','이더리움':'ETH-USD','솔라나':'SOL-USD',
+  '리플':'XRP-USD','에이다':'ADA-USD','도지코인':'DOGE-USD',
+  '아발란체':'AVAX-USD','폴카닷':'DOT-USD','체인링크':'LINK-USD',
+  '시바이누':'SHIB-USD','라이트코인':'LTC-USD','폴리곤':'MATIC-USD'
+};
+
 function searchLocal(q){
-  q=q.toLowerCase();
-  return LOCAL_STOCKS.filter(function(s){
-    return s.symbol.toLowerCase().indexOf(q)>=0||s.longname.toLowerCase().indexOf(q)>=0;
+  q=q.trim().toLowerCase();
+  var seen={},res=[];
+  // 1. 한국어 별칭 매핑
+  Object.keys(KOR_ALIAS).forEach(function(k){
+    if(k.indexOf(q)>=0){
+      var sym=KOR_ALIAS[k];
+      LOCAL_STOCKS.filter(function(s){return s.symbol===sym;}).forEach(function(s){
+        if(!seen[s.symbol]){seen[s.symbol]=true;res.push(s);}
+      });
+    }
   });
+  // 2. 심볼/영문명 직접 매칭
+  LOCAL_STOCKS.filter(function(s){
+    return s.symbol.toLowerCase().indexOf(q)>=0||s.longname.toLowerCase().indexOf(q)>=0;
+  }).forEach(function(s){
+    if(!seen[s.symbol]){seen[s.symbol]=true;res.push(s);}
+  });
+  return res;
 }
 
 function renderDrop(qs,drop){
