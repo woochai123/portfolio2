@@ -166,22 +166,6 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
   <input type="file" id="rf" accept=".json" style="display:none" onchange="doRestore(event)">
 </div>
 
-<div class="pg" id="p-cagr">
-  <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 종목별 CAGR · 실시간 차트</div>
-  <div style="font-size:12px;color:#4a5568;margin-bottom:12px">종목 터치 → 차트 표시 · 핀치/스크롤로 확대하면 일봉·시간봉 전환</div>
-  <div id="chartbox" style="display:none;background:#1e2330;border:1px solid #2a3045;border-radius:12px;overflow:hidden;margin-bottom:12px">
-    <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a3045">
-      <div>
-        <div id="chartlabel" style="font-size:13px;font-weight:700;color:#e8ecf4"></div>
-        <div id="chartperiod" style="font-size:10px;color:#4f9eff;margin-top:2px"></div>
-      </div>
-      <button class="rb2" onclick="document.getElementById('chartbox').style.display='none'">✕ 닫기</button>
-    </div>
-    <div id="chartloading" style="display:none;padding:16px;text-align:center;font-size:12px;color:#4a5568">📊 차트 불러오는 중...</div>
-    <div id="chartdiv" style="height:240px"></div>
-  </div>
-  <div id="cagrlist"><div class="ne">포트폴리오에 종목을 등록하면<br>자동으로 표시됩니다.</div></div>
-</div>
 
 <div class="pg" id="p-news">
   <div class="ns">
@@ -218,15 +202,19 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div class="pr" onclick="openM('addFromYear','연 추가 시작 연도','년차')"><span class="prl">🗓️ 연 추가 시작 연도</span><span class="prv" id="sp5">7년차 ✏️</span></div>
     <div class="pr" onclick="openM('divRate','배당재투자 성장률','%')"><span class="prl">💰 배당재투자 성장률</span><span class="prv" id="sp6">5% ✏️</span></div>
   </div>
+  <div style="font-size:11px;color:#4a5568;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    <span>📊 자산 성장 그래프 — <span id="simlabel" style="color:#4f9eff;font-weight:700">연도별</span></span>
+    <span style="font-size:10px">핀치 확대 → 월별 → 일별</span>
+  </div>
+  <div id="simchartdiv" style="height:220px;border-radius:10px;overflow:hidden;margin-bottom:12px;background:#161a23;border:1px solid #2a3045"></div>
   <div class="rg" id="simres"></div>
 </div>
 
 <div class="tb">
   <button class="ti on" onclick="goTab('pf',this)"><span>💼</span>포트폴리오</button>
-  <button class="ti" onclick="goTab('cagr',this)"><span>📊</span>CAGR</button>
+  <button class="ti" onclick="goTab('sim',this)"><span>📈</span>시뮬레이션</button>
   <button class="ti" onclick="goTab('news',this)"><span>📰</span>뉴스</button>
   <button class="ti" onclick="goTab('tech',this)"><span>🔬</span>기술동향</button>
-  <button class="ti" onclick="goTab('sim',this)"><span>📈</span>시뮬레이션</button>
 </div>
 
 <div class="ov" id="modal" onclick="closeOv(event)">
@@ -504,8 +492,7 @@ function goTab(name,el){
   document.querySelectorAll('.ti').forEach(function(t){t.classList.remove('on')});
   document.getElementById('p-'+name).classList.add('on');
   el.classList.add('on');
-  if(name==='sim')renderSim();
-  if(name==='cagr')renderCagr();
+  if(name==='sim'){renderSim();setTimeout(function(){if(!simChart)initSimChart();},60);}
   if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://www.hankyung.com/feed/economy','n-mkt');loadRss('https://www.blockmedia.co.kr/feed/','n-cry');loaded.news=true;}
   if(name==='tech'&&!loaded.tech){
     loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai');
@@ -651,7 +638,7 @@ function addStock(){
   if(!fq){toast('수량 또는 매수총액을 입력해주세요');return;}
   var p=curMode==='USD'?price*exRate:price;
   stocks.push({id:Date.now(),name:name,sym:sym,price:p,qty:fq});
-  saveS();renderStocks();renderCagr();renderSim();
+  saveS();renderStocks();renderSim();
   ['i-name','i-tick','i-sym','i-price','i-qty','i-tot'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   toast('✅ '+name+' 등록 완료!');
 }
@@ -659,7 +646,7 @@ function addStock(){
 function delStock(id){
   if(!confirm('삭제할까요?'))return;
   stocks=stocks.filter(function(s){return s.id!==id;});
-  saveS();renderStocks();renderCagr();renderSim();
+  saveS();renderStocks();renderSim();
 }
 
 function buyMore(id){
@@ -669,7 +656,7 @@ function buyMore(id){
   var s=stocks.find(function(s){return s.id===id;});if(!s)return;
   var ap=parseFloat(p),aq=parseFloat(q),tq=s.qty+aq;
   s.price=(s.price*s.qty+ap*aq)/tq;s.qty=tq;
-  saveS();renderStocks();toast('✅ 물타기 완료!');
+  saveS();renderStocks();renderSim();toast('✅ 물타기 완료!');
 }
 
 function renderStocks(){
@@ -905,6 +892,7 @@ function renderSim(){
     document.getElementById('simres').innerHTML=[1,3,5,7,10,15,20].map(function(y){
       return '<div class="rc"><div class="ry">'+y+'년 후</div><div class="ra" style="color:#4a5568">₩0</div><div class="rd">종목 등록 필요</div></div>';
     }).join('');
+    updateSimChart();
     return;
   }
   var r=sim.rate/100,dv=sim.divRate/100,a=org,res=[];
@@ -916,7 +904,133 @@ function renderSim(){
   document.getElementById('simres').innerHTML=res.filter(function(x){return[1,3,5,7,10,15,20].indexOf(x.y)>=0;}).map(function(x){
     return '<div class="rc"><div class="ry">'+x.y+'년 후</div><div class="ra">'+fb(x.a)+'</div><div class="rd">+'+fb(x.a-org)+'</div></div>';
   }).join('');
+  updateSimChart();
 }
+
+// ── 시뮬레이션 차트 ──────────────────────────────
+var simChart=null,simSeries=null,simMode='year',simCooldown=false;
+
+function buildSimData(mode){
+  var org=totalBuy();
+  if(!org)return[];
+  var r=sim.rate/100,dv=sim.divRate/100;
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var curYear=today.getFullYear();
+  var res=[];
+
+  if(mode==='year'){
+    var a=org;
+    for(var y=0;y<20;y++){
+      var yearN=y+1;
+      var ex=yearN>=sim.addFromYear?sim.addFrom:0;
+      a=(a+sim.daily*252+sim.monthly*12+ex)*(1+r)*(1+dv*0.3);
+      res.push({time:(curYear+yearN)+'-01-01',value:Math.round(a)});
+    }
+  } else if(mode==='month'){
+    var rm=Math.pow(1+r,1/12)-1;
+    var rdvm=Math.pow(1+dv*0.3,1/12)-1;
+    var a=org;
+    var d=new Date(today);
+    for(var m=0;m<20*12;m++){
+      d.setMonth(d.getMonth()+1);
+      d.setDate(1);
+      var yearN2=Math.floor(m/12)+1;
+      var isLastMonth=(m%12===11);
+      var ex2=(isLastMonth&&yearN2>=sim.addFromYear)?sim.addFrom:0;
+      a=(a+sim.daily*21+sim.monthly+ex2)*(1+rm)*(1+rdvm);
+      var mm=d.getMonth()+1;
+      res.push({time:d.getFullYear()+'-'+(mm<10?'0':'')+mm+'-01',value:Math.round(a)});
+    }
+  } else {
+    var rd=Math.pow(1+r,1/252)-1;
+    var rdd=Math.pow(1+dv*0.3,1/252)-1;
+    var a=org;
+    var cur=new Date(today);
+    var prevYear=cur.getFullYear(),prevMonth=cur.getMonth();
+    var daysAdded=0,target=20*252;
+    while(daysAdded<target){
+      cur.setDate(cur.getDate()+1);
+      var dow=cur.getDay();
+      if(dow===0||dow===6)continue;
+      a=(a+sim.daily)*(1+rd)*(1+rdd);
+      if(cur.getMonth()!==prevMonth){
+        a+=sim.monthly;
+        prevMonth=cur.getMonth();
+      }
+      if(cur.getFullYear()>prevYear){
+        var yn=cur.getFullYear()-today.getFullYear();
+        if(yn>=sim.addFromYear)a+=sim.addFrom;
+        prevYear=cur.getFullYear();
+      }
+      var cm=cur.getMonth()+1,cd=cur.getDate();
+      res.push({time:cur.getFullYear()+'-'+(cm<10?'0':'')+cm+'-'+(cd<10?'0':'')+cd,value:Math.round(a)});
+      daysAdded++;
+    }
+  }
+  return res;
+}
+
+function switchSimMode(mode){
+  if(simMode===mode||simCooldown)return;
+  simCooldown=true;
+  simMode=mode;
+  var labels={year:'연도별',month:'월별',day:'일별'};
+  var el=document.getElementById('simlabel');
+  if(el)el.textContent=labels[mode]||'';
+  updateSimChart();
+  setTimeout(function(){simCooldown=false;},1200);
+}
+
+function updateSimChart(){
+  if(!simSeries)return;
+  var data=buildSimData(simMode);
+  if(!data.length){simSeries.setData([]);return;}
+  simSeries.setData(data);
+  simChart.timeScale().fitContent();
+}
+
+function initSimChart(){
+  if(simChart)return;
+  if(typeof LightweightCharts==='undefined'){setTimeout(initSimChart,300);return;}
+  var el=document.getElementById('simchartdiv');
+  if(!el)return;
+  simChart=LightweightCharts.createChart(el,{
+    width:el.clientWidth||window.innerWidth-28,
+    height:220,
+    layout:{background:{type:'solid',color:'#161a23'},textColor:'#8892a4'},
+    grid:{vertLines:{color:'#2a3045'},horzLines:{color:'#2a3045'}},
+    crosshair:{mode:1},
+    rightPriceScale:{borderColor:'#2a3045'},
+    timeScale:{borderColor:'#2a3045',timeVisible:false},
+    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
+    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
+  });
+  simSeries=simChart.addAreaSeries({
+    lineColor:'#4f9eff',
+    topColor:'rgba(79,158,255,0.3)',
+    bottomColor:'rgba(79,158,255,0.02)',
+    lineWidth:2,
+    priceFormat:{type:'custom',minMove:1,formatter:function(p){
+      if(p>=1e8)return'₩'+(p/1e8).toFixed(1)+'억';
+      if(p>=1e4)return'₩'+(p/1e4).toFixed(0)+'만';
+      return'₩'+Math.round(p).toLocaleString('ko-KR');
+    }}
+  });
+  simChart.timeScale().subscribeVisibleLogicalRangeChange(function(range){
+    if(!range||simCooldown)return;
+    var bars=Math.round(range.to-range.from);
+    if(simMode==='year'&&bars<4)switchSimMode('month');
+    else if(simMode==='month'&&bars<14)switchSimMode('day');
+    else if(simMode==='day'&&bars>900)switchSimMode('month');
+    else if(simMode==='month'&&bars>260)switchSimMode('year');
+  });
+  window.addEventListener('resize',function(){
+    if(simChart){var w=document.getElementById('simchartdiv');if(w)simChart.applyOptions({width:w.clientWidth||window.innerWidth-28});}
+  });
+  updateSimChart();
+}
+// ─────────────────────────────────────────────
 
 function openM(key,title,unit){
   mKey=key;
@@ -944,7 +1058,7 @@ function doBackup(){
 function doRestore(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(ev){try{stocks=JSON.parse(ev.target.result);saveS();renderStocks();renderCagr();toast('✅ 복원 완료!');}catch(err){toast('❌ 파일 오류');}};
+  r.onload=function(ev){try{stocks=JSON.parse(ev.target.result);saveS();renderStocks();renderSim();toast('✅ 복원 완료!');}catch(err){toast('❌ 파일 오류');}};
   r.readAsText(f);
 }
 
@@ -955,7 +1069,6 @@ function fk(n){if(n>=1e8)return(n/1e8).toFixed(0)+'억';if(n>=1e4)return(n/1e4).
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},2500);}
 
 renderStocks();
-renderCagr();
 renderSim();
 </script>
 </body>
