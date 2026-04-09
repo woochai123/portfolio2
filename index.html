@@ -203,7 +203,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div class="pr" onclick="openM('divRate','배당재투자 성장률','%')"><span class="prl">💰 배당재투자 성장률</span><span class="prv" id="sp6">5% ✏️</span></div>
   </div>
   <div style="font-size:11px;color:#4a5568;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
-    <span>📊 자산 성장 그래프 — <span id="simlabel" style="color:#4f9eff;font-weight:700">연도별</span></span>
+    <span>📊 <span style="color:#4f9eff">━</span> 실제 포트폴리오 &nbsp;<span style="color:#00e5b0">╌</span> 예측 &nbsp;|&nbsp; <span id="simlabel" style="color:#4f9eff;font-weight:700">연도별</span></span>
     <span style="font-size:10px">핀치 확대 → 월별 → 일별</span>
   </div>
   <div id="simchartdiv" style="height:220px;border-radius:10px;overflow:hidden;margin-bottom:12px;background:#161a23;border:1px solid #2a3045"></div>
@@ -908,96 +908,114 @@ function renderSim(){
 }
 
 // ── 시뮬레이션 차트 ──────────────────────────────
-var simChart=null,simSeries=null,simMode='year',simCooldown=false;
+var simChart=null,simHistSeries=null,simProjSeries=null,simMode='year',simCooldown=false;
 
-function buildSimData(mode){
+function d2s(d){var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
+
+function buildSimChartData(mode){
   var org=totalBuy();
-  if(!org)return[];
+  var today=new Date();today.setHours(0,0,0,0);
+  var todayStr=d2s(today);
   var r=sim.rate/100,dv=sim.divRate/100;
-  var today=new Date();
-  today.setHours(0,0,0,0);
-  var curYear=today.getFullYear();
-  var res=[];
+  var hist=[],proj=[];
+
+  // ── 실선: 실제 포트폴리오 매수금액 누적 ──
+  if(stocks.length){
+    var sorted=stocks.slice().sort(function(a,b){return a.id-b.id;});
+    var ev=[],cum=0;
+    sorted.forEach(function(s){cum+=s.price*s.qty;var d=new Date(s.id);d.setHours(0,0,0,0);ev.push({t:d.getTime(),v:cum});});
+    function vAt(ts){var v=0,i=0;while(i<ev.length&&ev[i].t<=ts){v=ev[i].v;i++;}return v;}
+    var firstD=new Date(ev[0].t);
+
+    if(mode==='year'){
+      for(var y=firstD.getFullYear();y<=today.getFullYear();y++){
+        var chk=(y===today.getFullYear())?today.getTime():new Date(y,11,31).getTime();
+        hist.push({time:y+'-01-01',value:Math.round(vAt(chk))});
+      }
+    } else if(mode==='month'){
+      var hc=new Date(firstD.getFullYear(),firstD.getMonth(),1);
+      while(hc<=today){
+        var hm=hc.getMonth()+1;
+        var ld=new Date(hc.getFullYear(),hc.getMonth()+1,0);
+        hist.push({time:hc.getFullYear()+'-'+(hm<10?'0':'')+hm+'-01',value:Math.round(vAt(Math.min(ld.getTime(),today.getTime())))});
+        hc.setMonth(hc.getMonth()+1);
+      }
+    } else {
+      var hd=new Date(firstD);
+      while(hd<=today){
+        if(hd.getDay()!==0&&hd.getDay()!==6)hist.push({time:d2s(hd),value:Math.round(vAt(hd.getTime()))});
+        hd.setDate(hd.getDate()+1);
+      }
+    }
+    // 마지막 점 = 오늘 현재값으로 고정
+    if(hist.length){
+      var last=hist[hist.length-1];
+      if(last.time===todayStr)last.value=Math.round(org);
+      else if(mode!=='day')hist.push({time:todayStr,value:Math.round(org)});
+    }
+  }
+
+  if(!org)return{hist:hist,proj:[]};
+
+  // ── 점선: 미래 예측 시뮬레이션 ──
+  proj.push({time:todayStr,value:Math.round(org)});
 
   if(mode==='year'){
     var a=org;
-    for(var y=0;y<20;y++){
-      var yearN=y+1;
-      var ex=yearN>=sim.addFromYear?sim.addFrom:0;
+    for(var i=0;i<20;i++){
+      var yn=i+1,ex=yn>=sim.addFromYear?sim.addFrom:0;
       a=(a+sim.daily*252+sim.monthly*12+ex)*(1+r)*(1+dv*0.3);
-      res.push({time:(curYear+yearN)+'-01-01',value:Math.round(a)});
+      proj.push({time:(today.getFullYear()+yn)+'-01-01',value:Math.round(a)});
     }
   } else if(mode==='month'){
-    var rm=Math.pow(1+r,1/12)-1;
-    var rdvm=Math.pow(1+dv*0.3,1/12)-1;
-    var a=org;
-    var d=new Date(today);
+    var rm=Math.pow(1+r,1/12)-1,rdvm=Math.pow(1+dv*0.3,1/12)-1,a=org;
+    var pd=new Date(today);
     for(var m=0;m<20*12;m++){
-      d.setMonth(d.getMonth()+1);
-      d.setDate(1);
-      var yearN2=Math.floor(m/12)+1;
-      var isLastMonth=(m%12===11);
-      var ex2=(isLastMonth&&yearN2>=sim.addFromYear)?sim.addFrom:0;
+      pd.setMonth(pd.getMonth()+1);pd.setDate(1);
+      var yn2=Math.floor(m/12)+1,isL=(m%12===11);
+      var ex2=(isL&&yn2>=sim.addFromYear)?sim.addFrom:0;
       a=(a+sim.daily*21+sim.monthly+ex2)*(1+rm)*(1+rdvm);
-      var mm=d.getMonth()+1;
-      res.push({time:d.getFullYear()+'-'+(mm<10?'0':'')+mm+'-01',value:Math.round(a)});
+      var pm2=pd.getMonth()+1;
+      proj.push({time:pd.getFullYear()+'-'+(pm2<10?'0':'')+pm2+'-01',value:Math.round(a)});
     }
   } else {
-    var rd=Math.pow(1+r,1/252)-1;
-    var rdd=Math.pow(1+dv*0.3,1/252)-1;
-    var a=org;
-    var cur=new Date(today);
-    var prevYear=cur.getFullYear(),prevMonth=cur.getMonth();
-    var daysAdded=0,target=20*252;
-    while(daysAdded<target){
-      cur.setDate(cur.getDate()+1);
-      var dow=cur.getDay();
-      if(dow===0||dow===6)continue;
+    var rd=Math.pow(1+r,1/252)-1,rdd=Math.pow(1+dv*0.3,1/252)-1,a=org;
+    var dc=new Date(today),dcpm=dc.getMonth(),dcpy=dc.getFullYear(),cnt=0;
+    while(cnt<20*252){
+      dc.setDate(dc.getDate()+1);
+      if(dc.getDay()===0||dc.getDay()===6)continue;
       a=(a+sim.daily)*(1+rd)*(1+rdd);
-      if(cur.getMonth()!==prevMonth){
-        a+=sim.monthly;
-        prevMonth=cur.getMonth();
-      }
-      if(cur.getFullYear()>prevYear){
-        var yn=cur.getFullYear()-today.getFullYear();
-        if(yn>=sim.addFromYear)a+=sim.addFrom;
-        prevYear=cur.getFullYear();
-      }
-      var cm=cur.getMonth()+1,cd=cur.getDate();
-      res.push({time:cur.getFullYear()+'-'+(cm<10?'0':'')+cm+'-'+(cd<10?'0':'')+cd,value:Math.round(a)});
-      daysAdded++;
+      if(dc.getMonth()!==dcpm){a+=sim.monthly;dcpm=dc.getMonth();}
+      if(dc.getFullYear()>dcpy){var yn3=dc.getFullYear()-today.getFullYear();if(yn3>=sim.addFromYear)a+=sim.addFrom;dcpy=dc.getFullYear();}
+      proj.push({time:d2s(dc),value:Math.round(a)});cnt++;
     }
   }
-  return res;
+  return{hist:hist,proj:proj};
 }
 
 function switchSimMode(mode){
   if(simMode===mode||simCooldown)return;
-  simCooldown=true;
-  simMode=mode;
+  simCooldown=true;simMode=mode;
   var labels={year:'연도별',month:'월별',day:'일별'};
-  var el=document.getElementById('simlabel');
-  if(el)el.textContent=labels[mode]||'';
+  var el=document.getElementById('simlabel');if(el)el.textContent=labels[mode]||'';
   updateSimChart();
   setTimeout(function(){simCooldown=false;},1200);
 }
 
 function updateSimChart(){
-  if(!simSeries)return;
-  var data=buildSimData(simMode);
-  if(!data.length){simSeries.setData([]);return;}
-  simSeries.setData(data);
+  if(!simHistSeries||!simProjSeries)return;
+  var data=buildSimChartData(simMode);
+  simHistSeries.setData(data.hist);
+  simProjSeries.setData(data.proj);
   simChart.timeScale().fitContent();
 }
 
 function initSimChart(){
   if(simChart)return;
   if(typeof LightweightCharts==='undefined'){setTimeout(initSimChart,300);return;}
-  var el=document.getElementById('simchartdiv');
-  if(!el)return;
+  var el=document.getElementById('simchartdiv');if(!el)return;
   simChart=LightweightCharts.createChart(el,{
-    width:el.clientWidth||window.innerWidth-28,
-    height:220,
+    width:el.clientWidth||window.innerWidth-28,height:220,
     layout:{background:{type:'solid',color:'#161a23'},textColor:'#8892a4'},
     grid:{vertLines:{color:'#2a3045'},horzLines:{color:'#2a3045'}},
     crosshair:{mode:1},
@@ -1006,16 +1024,19 @@ function initSimChart(){
     handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
     handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
   });
-  simSeries=simChart.addAreaSeries({
-    lineColor:'#4f9eff',
-    topColor:'rgba(79,158,255,0.3)',
-    bottomColor:'rgba(79,158,255,0.02)',
-    lineWidth:2,
-    priceFormat:{type:'custom',minMove:1,formatter:function(p){
-      if(p>=1e8)return'₩'+(p/1e8).toFixed(1)+'억';
-      if(p>=1e4)return'₩'+(p/1e4).toFixed(0)+'만';
-      return'₩'+Math.round(p).toLocaleString('ko-KR');
-    }}
+  var pFmt={type:'custom',minMove:1,formatter:function(p){
+    if(p>=1e8)return'₩'+(p/1e8).toFixed(1)+'억';
+    if(p>=1e4)return'₩'+(p/1e4).toFixed(0)+'만';
+    return'₩'+Math.round(p).toLocaleString('ko-KR');
+  }};
+  // 실선 — 실제 포트폴리오 (매수금액 누적)
+  simHistSeries=simChart.addAreaSeries({
+    lineColor:'#4f9eff',topColor:'rgba(79,158,255,0.22)',bottomColor:'rgba(79,158,255,0.01)',
+    lineWidth:2,lineStyle:0,priceFormat:pFmt
+  });
+  // 점선 — 미래 예측
+  simProjSeries=simChart.addLineSeries({
+    color:'#00e5b0',lineWidth:2,lineStyle:2,priceFormat:pFmt
   });
   simChart.timeScale().subscribeVisibleLogicalRangeChange(function(range){
     if(!range||simCooldown)return;
