@@ -716,6 +716,7 @@ function renderStocks(){
   }
   var tb=0,te=0,h='';
   stocks.forEach(function(s){
+    var isKRW=!s.sym||s.sym.endsWith('.KS')||s.sym.endsWith('.KQ');
     var ep=s.cur||s.price;
     var b=s.price*s.qty,ev=ep*s.qty;
     tb+=b;te+=ev;
@@ -723,13 +724,23 @@ function renderStocks(){
     var hasCur=!!s.cur;
     var cls=pnl>=0?'up':'dn',sg=pnl>=0?'+':'';
     var curCls=hasCur?(s.cur>=s.price?'up':'dn'):'';
-    var curStr=hasCur?'<span class="'+curCls+'">'+fmt(s.cur)+'</span>':'<span style="color:#4a5568">— 미입력</span>';
+    // 가격 표시: 미국주식은 달러 + (원화), 한국주식은 원화만
+    function priceStr(krwVal){
+      if(isKRW)return fmt(krwVal);
+      var usd=(krwVal/exRate);
+      var usdStr=usd>=100?'$'+Math.round(usd).toLocaleString():'$'+usd.toFixed(2);
+      return usdStr+'<span style="font-size:10px;color:#6b7280"> ('+fmt(krwVal)+')</span>';
+    }
+    var buyPriceStr=priceStr(s.price);
+    var curStr=hasCur
+      ?'<span class="'+curCls+'">'+priceStr(s.cur)+'</span>'
+      :'<span style="color:#4a5568">— 미입력</span>';
     var topRight=hasCur
       ?'<div class="spn '+cls+'">'+sg+fmt(pnl)+'</div><div class="spr '+cls+'">'+sg+pr.toFixed(2)+'%</div>'
       :'<div style="font-size:11px;color:#4a5568;margin-top:4px">현재가 미입력</div>';
     h+='<div class="sc">'
       +'<div class="st"><div><span class="sn">'+s.name+'</span>'+(s.sym?'<span class="stk">'+s.sym+'</span>':'')+'</div><div class="sp">'+topRight+'</div></div>'
-      +'<div class="sm"><div><div class="sml">매수단가</div><div class="smv">'+fmt(s.price)+'</div></div>'
+      +'<div class="sm"><div><div class="sml">매수단가</div><div class="smv">'+buyPriceStr+'</div></div>'
         +'<div><div class="sml">현재가</div><div class="smv">'+curStr+'</div></div>'
         +'<div><div class="sml">수량</div><div class="smv">'+s.qty.toLocaleString()+'주</div></div></div>'
       +'<div class="sm" style="border-top:1px solid #1e2a3a;padding-top:8px;margin-top:-4px">'
