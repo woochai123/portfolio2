@@ -125,18 +125,18 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
 .mkt-prc{font-size:10px;color:#4a5568;margin-top:1px}
 .mkt-pct{font-size:14px;font-weight:700;min-width:65px;text-align:right}
 .sum-box{font-size:12px;color:#8892a4;padding:8px 10px;background:#161a23;border-radius:8px;margin-bottom:10px;line-height:1.6}
-.pk-card{background:#1e2330;border:1px solid #2a3045;border-radius:10px;padding:13px;margin-bottom:10px}
-.pk-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.pk-info .pk-sym{font-size:11px;color:#4f9eff;font-weight:700;margin-bottom:2px}
-.pk-info .pk-nm{font-size:14px;font-weight:700}
-.pk-sec{font-size:10px;background:rgba(79,158,255,.12);color:#4f9eff;border-radius:4px;padding:2px 7px;align-self:flex-start;white-space:nowrap}
-.pk-sc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.pk-sclbl{font-size:10px;color:#4a5568;white-space:nowrap}
-.pk-bar{flex:1;height:5px;background:#2a3045;border-radius:3px;overflow:hidden}
-.pk-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#4f9eff,#00e5b0)}
-.pk-scnum{font-size:12px;color:#00e5b0;font-weight:700;min-width:30px;text-align:right}
-.pk-rs{font-size:12px;color:#8892a4;line-height:1.65;margin-bottom:7px}
-.pk-rk{font-size:11px;color:#ff6b6b;background:rgba(255,77,109,.08);border-radius:6px;padding:4px 9px;display:inline-block}
+.pk-card{background:#161a23;border:1px solid #2a3045;border-left:3px solid #4f9eff;border-radius:10px;padding:14px;margin-bottom:8px}
+.pk-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pk-sym{font-size:20px;font-weight:800;color:#e8ecf4;letter-spacing:.3px;line-height:1}
+.pk-nm{font-size:11px;color:#4a5568;margin:3px 0 5px}
+.pk-sec{font-size:10px;font-weight:700;border-radius:4px;padding:2px 8px;display:inline-block}
+.pk-sco-wrap{text-align:right}
+.pk-sco{font-size:32px;font-weight:800;line-height:1}
+.pk-scolbl{font-size:9px;color:#4a5568;letter-spacing:.5px;margin-top:1px}
+.pk-bar{height:3px;background:#2a3045;border-radius:2px;overflow:hidden;margin-bottom:10px}
+.pk-fill{height:100%;border-radius:2px}
+.pk-rs{font-size:12px;color:#8892a4;line-height:1.7;margin-bottom:8px}
+.pk-rk{font-size:11px;color:#ff6b6b;background:rgba(255,77,109,.08);border-radius:5px;padding:5px 10px;display:block}
 .ai-btn{background:#1e2330;border:1px solid #2a3045;color:#4f9eff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
 .ai-btn:active{opacity:.7}
 </style>
@@ -974,7 +974,9 @@ function buildSimChartData(mode){
     var firstD=new Date(ev[0].t);
 
     if(mode==='year'){
-      for(var y=firstD.getFullYear();y<=today.getFullYear();y++){
+      // 첫 매수일부터 시작 (Jan 1이 0일 수 있으므로 실제 날짜 사용)
+      hist.push({time:d2s(firstD),value:Math.round(ev[0].v)});
+      for(var y=firstD.getFullYear()+1;y<=today.getFullYear();y++){
         var chk=(y===today.getFullYear())?today.getTime():new Date(y,11,31).getTime();
         hist.push({time:y+'-01-01',value:Math.round(vAt(chk))});
       }
@@ -993,6 +995,8 @@ function buildSimChartData(mode){
         hd.setDate(hd.getDate()+1);
       }
     }
+    // 0값 제거 (매수 전 구간)
+    hist=hist.filter(function(p){return p.value>0;});
     // 마지막 점 = 오늘 현재값으로 고정
     if(hist.length){
       var last=hist[hist.length-1];
@@ -1276,9 +1280,23 @@ function formatMktPrice(sym,price){
 function renderAIPicks(){
   var el=document.getElementById('aipicks');
   if(el.children.length)return;
+  var SC={'AI 반도체':'#4f9eff','클라우드·AI':'#a78bfa','파운드리':'#00e5b0',
+    '클라우드·이커머스':'#fbbf24','바이오':'#f472b6','분산투자':'#fb923c',
+    '종합반도체':'#38bdf8','AI 데이터분석':'#a78bfa'};
   el.innerHTML=AI_PICKS.map(function(p){
-    var w=p.score+'%';
-    return '<div class="pk-card"><div class="pk-top"><div class="pk-info"><div class="pk-sym">'+p.sym+'</div><div class="pk-nm">'+p.name+'</div></div><div class="pk-sec">'+p.sector+'</div></div><div class="pk-sc"><span class="pk-sclbl">AI 확신도</span><div class="pk-bar"><div class="pk-fill" style="width:'+w+'"></div></div><span class="pk-scnum">'+p.score+'</span></div><div class="pk-rs">'+p.reason+'</div><div class="pk-rk">⚠️ 리스크: '+p.risk+'</div></div>';
+    var c=SC[p.sector]||'#4f9eff';
+    var bg=c+'18';
+    return '<div class="pk-card" style="border-left-color:'+c+'">'
+      +'<div class="pk-head">'
+        +'<div><div class="pk-sym">'+p.sym+'</div><div class="pk-nm">'+p.name+'</div>'
+        +'<span class="pk-sec" style="color:'+c+';background:'+bg+'">'+p.sector+'</span></div>'
+        +'<div class="pk-sco-wrap"><div class="pk-sco" style="color:'+c+'">'+p.score+'</div>'
+        +'<div class="pk-scolbl">AI SCORE</div></div>'
+      +'</div>'
+      +'<div class="pk-bar"><div class="pk-fill" style="width:'+p.score+'%;background:linear-gradient(90deg,'+c+',#00e5b0)"></div></div>'
+      +'<div class="pk-rs">'+p.reason+'</div>'
+      +'<div class="pk-rk">⚠️ '+p.risk+'</div>'
+    +'</div>';
   }).join('');
 }
 // ─────────────────────────────────────────────
