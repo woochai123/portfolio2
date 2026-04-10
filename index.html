@@ -172,17 +172,6 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div class="nt">💼 내 포트폴리오 기사 <button class="rb2" onclick="loadPfNews()">🔄 새로고침</button></div>
     <div id="n-pf"><div class="ne">포트폴리오에 티커가 있는 종목을<br>등록하면 뉴스가 자동으로 뜹니다.</div></div>
   </div>
-  <div class="ns">
-    <div class="nt">🌍 글로벌 증시 <button class="rb2" onclick="loadRss('https://www.hankyung.com/feed/economy','n-mkt')">🔄</button></div>
-    <div id="n-mkt"><div class="nl">불러오는 중...</div></div>
-  </div>
-  <div class="ns">
-    <div class="nt">🛢️ 암호화폐 <button class="rb2" onclick="loadRss('https://www.blockmedia.co.kr/feed/','n-cry')">🔄</button></div>
-    <div id="n-cry"><div class="nl">불러오는 중...</div></div>
-  </div>
-</div>
-
-<div class="pg" id="p-tech">
   <div class="ns"><div class="nt">🤖 AI / 인공지능 <button class="rb2" onclick="loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai')">🔄</button></div><div id="n-ai"><div class="nl">불러오는 중...</div></div></div>
   <div class="ns"><div class="nt">⚛️ 양자컴퓨터 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-qt')">🔄</button></div><div id="n-qt"><div class="nl">불러오는 중...</div></div></div>
   <div class="ns"><div class="nt">🏭 반도체 <button class="rb2" onclick="loadRss('https://rss.etnews.com/Section901.xml','n-semi')">🔄</button></div><div id="n-semi"><div class="nl">불러오는 중...</div></div></div>
@@ -214,7 +203,6 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
   <button class="ti on" onclick="goTab('pf',this)"><span>💼</span>포트폴리오</button>
   <button class="ti" onclick="goTab('sim',this)"><span>📈</span>시뮬레이션</button>
   <button class="ti" onclick="goTab('news',this)"><span>📰</span>뉴스</button>
-  <button class="ti" onclick="goTab('tech',this)"><span>🔬</span>기술동향</button>
 </div>
 
 <div class="ov" id="modal" onclick="closeOv(event)">
@@ -494,14 +482,14 @@ function goTab(name,el){
   document.getElementById('p-'+name).classList.add('on');
   el.classList.add('on');
   if(name==='sim'){renderSim();setTimeout(function(){if(!simChart)initSimChart();},60);}
-  if(name==='news'&&!loaded.news){loadPfNews();loadRss('https://www.hankyung.com/feed/economy','n-mkt');loadRss('https://www.blockmedia.co.kr/feed/','n-cry');loaded.news=true;}
-  if(name==='tech'&&!loaded.tech){
+  if(name==='news'&&!loaded.news){
+    loadPfNews();
     loadRss('https://www.aitimes.kr/rss/allArticle.xml','n-ai');
-    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-qt')},400);
-    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-semi')},800);
-    setTimeout(function(){loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob')},1200);
-    setTimeout(function(){loadRss('https://www.mk.co.kr/rss/50400001/','n-sp')},1600);
-    loaded.tech=true;
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-qt');},400);
+    setTimeout(function(){loadRss('https://rss.etnews.com/Section901.xml','n-semi');},800);
+    setTimeout(function(){loadRss('https://zdnet.co.kr/rss/articleRss/','n-rob');},1200);
+    setTimeout(function(){loadRss('https://www.mk.co.kr/rss/50400001/','n-sp');},1600);
+    loaded.news=true;
   }
 }
 
