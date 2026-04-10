@@ -107,12 +107,69 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
 .em p{font-size:14px;line-height:1.7}
 .toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(16px);background:#1e2330;border:1px solid #2a3045;border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;pointer-events:none}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.ai-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:150;opacity:0;pointer-events:none;transition:opacity .25s}
+.ai-ov.on{opacity:1;pointer-events:all}
+.ai-dw{position:absolute;top:0;left:0;bottom:0;width:88%;max-width:420px;background:#0d0f14;overflow-y:auto;transform:translateX(-100%);transition:transform .28s ease;border-right:1px solid #2a3045;padding-bottom:40px}
+.ai-ov.on .ai-dw{transform:translateX(0)}
+.ai-hd{padding:13px 16px;border-bottom:1px solid #2a3045;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0d0f14;z-index:1}
+.ai-sec{padding:14px 16px;border-bottom:1px solid #2a3045}
+.ai-ttl{font-size:13px;font-weight:700;margin-bottom:10px;color:#e8ecf4}
+.per-btns{display:flex;gap:6px;margin-bottom:10px}
+.per-btn{flex:1;padding:7px 0;border-radius:8px;border:1px solid #2a3045;background:#161a23;color:#4a5568;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center}
+.per-btn.on{border-color:#4f9eff;color:#4f9eff;background:rgba(79,158,255,.1)}
+.mkt-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1a2035;font-size:13px}
+.mkt-row:last-child{border-bottom:none}
+.mkt-lft{display:flex;align-items:center;gap:7px}
+.mkt-flag{font-size:15px}
+.mkt-nm{color:#e8ecf4;font-weight:600}
+.mkt-prc{font-size:10px;color:#4a5568;margin-top:1px}
+.mkt-pct{font-size:14px;font-weight:700;min-width:65px;text-align:right}
+.sum-box{font-size:12px;color:#8892a4;padding:8px 10px;background:#161a23;border-radius:8px;margin-bottom:10px;line-height:1.6}
+.pk-card{background:#1e2330;border:1px solid #2a3045;border-radius:10px;padding:13px;margin-bottom:10px}
+.pk-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.pk-info .pk-sym{font-size:11px;color:#4f9eff;font-weight:700;margin-bottom:2px}
+.pk-info .pk-nm{font-size:14px;font-weight:700}
+.pk-sec{font-size:10px;background:rgba(79,158,255,.12);color:#4f9eff;border-radius:4px;padding:2px 7px;align-self:flex-start;white-space:nowrap}
+.pk-sc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pk-sclbl{font-size:10px;color:#4a5568;white-space:nowrap}
+.pk-bar{flex:1;height:5px;background:#2a3045;border-radius:3px;overflow:hidden}
+.pk-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#4f9eff,#00e5b0)}
+.pk-scnum{font-size:12px;color:#00e5b0;font-weight:700;min-width:30px;text-align:right}
+.pk-rs{font-size:12px;color:#8892a4;line-height:1.65;margin-bottom:7px}
+.pk-rk{font-size:11px;color:#ff6b6b;background:rgba(255,77,109,.08);border-radius:6px;padding:4px 9px;display:inline-block}
+.ai-btn{background:#1e2330;border:1px solid #2a3045;color:#4f9eff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
+.ai-btn:active{opacity:.7}
 </style>
 </head>
 <body>
 
 <div class="hd">
+  <button class="ai-btn" onclick="openAI()">🤖 AI분석</button>
   <h1>우차이의 <b>포트폴리오</b></h1>
+  <div style="width:64px"></div>
+</div>
+
+<div class="ai-ov" id="ai-ov" onclick="closeAIDrw(event)">
+  <div class="ai-dw">
+    <div class="ai-hd">
+      <div style="font-size:14px;font-weight:700">🤖 AI 시장분석 & 종목추천</div>
+      <button onclick="closeAI()" style="background:none;border:none;color:#8892a4;font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="ai-sec">
+      <div class="ai-ttl">📊 글로벌 시장 동향</div>
+      <div class="per-btns">
+        <button class="per-btn on" data-p="day" onclick="setMktPeriod('day')">일별</button>
+        <button class="per-btn" data-p="week" onclick="setMktPeriod('week')">주별</button>
+        <button class="per-btn" data-p="month" onclick="setMktPeriod('month')">월별</button>
+      </div>
+      <div class="sum-box" id="mkt-summary">데이터 불러오는 중...</div>
+      <div id="mktdata"><div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">📡 시장 데이터 로딩 중...</div></div>
+    </div>
+    <div class="ai-sec">
+      <div class="ai-ttl">💡 AI 장기투자 추천 <span style="font-size:10px;color:#4a5568;font-weight:400">(10년 관점)</span></div>
+      <div id="aipicks"></div>
+    </div>
+  </div>
 </div>
 
 <div class="pg on" id="p-pf">
@@ -1077,6 +1134,154 @@ function fmt(n){return'₩'+Math.round(n).toLocaleString('ko-KR');}
 function fb(n){if(n>=1e8)return'₩'+(n/1e8).toFixed(1)+'억';if(n>=1e4)return'₩'+(n/1e4).toFixed(0)+'만';return fmt(n);}
 function fk(n){if(n>=1e8)return(n/1e8).toFixed(0)+'억';if(n>=1e4)return(n/1e4).toFixed(0)+'만';return n.toLocaleString();}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},2500);}
+
+// ── AI 시장분석 & 종목추천 ───────────────────────
+var mktCache={},mktPeriod='day',mktFetched=false;
+
+var MKT_SYMS=[
+  {sym:'^GSPC',name:'S&P 500',flag:'🇺🇸'},
+  {sym:'^IXIC',name:'NASDAQ',flag:'🇺🇸'},
+  {sym:'^DJI',name:'다우존스',flag:'🇺🇸'},
+  {sym:'^KS11',name:'KOSPI',flag:'🇰🇷'},
+  {sym:'^KQ11',name:'KOSDAQ',flag:'🇰🇷'},
+  {sym:'^VIX',name:'공포지수(VIX)',flag:'😱'},
+  {sym:'GC=F',name:'금',flag:'🥇'},
+  {sym:'^TNX',name:'미 10년 국채',flag:'🏦'}
+];
+
+var AI_PICKS=[
+  {sym:'NVDA',name:'NVIDIA',sector:'AI 반도체',score:95,
+   reason:'AI 시대 핵심 GPU 인프라. CUDA 소프트웨어 생태계는 10년 이상 독점적 해자. 데이터센터 매출 연 200%+ 성장세. AI 추론 수요 확대로 복합 성장 지속 전망.',
+   risk:'고밸류에이션 · 중국 수출 규제'},
+  {sym:'MSFT',name:'Microsoft',sector:'클라우드·AI',score:92,
+   reason:'Azure 클라우드 2위 + OpenAI 독점 파트너십. Copilot으로 기업 소프트웨어 전 영역 AI 수익화. 안정적 배당·자사주 매입. 방어성과 성장성 동시 보유.',
+   risk:'반독점 규제 리스크'},
+  {sym:'TSM',name:'TSMC',sector:'파운드리',score:90,
+   reason:'3nm 이하 첨단 반도체 세계 90% 독점 파운드리. NVDA·AAPL·AMD 전부 의존. AI 칩 폭발적 수요 최대 수혜. 기술 격차로 단기 대체 불가.',
+   risk:'대만 지정학 리스크'},
+  {sym:'AMZN',name:'Amazon',sector:'클라우드·이커머스',score:88,
+   reason:'AWS 클라우드 시장 점유율 31% 압도적 1위. AI 인프라 투자로 수익성 역대 최고. 광고·물류 고성장 추가. 비용 효율화로 영업이익률 지속 확대.',
+   risk:'독점 규제 · 경기 민감성'},
+  {sym:'LLY',name:'Eli Lilly',sector:'바이오',score:87,
+   reason:'GLP-1 비만치료제 혁명 주도. 글로벌 비만·당뇨 치료 시장 수조 달러 규모. 알츠하이머 신약 파이프라인 보유. 헬스케어 10년 메가트렌드 최선호주.',
+   risk:'고밸류에이션 · 특허 만료'},
+  {sym:'BRK-B',name:'버크셔 해서웨이',sector:'분산투자',score:85,
+   reason:'워렌 버핏의 검증된 복리 자산 배분. 현금 3,000억달러+ 위기 시 저점 매수 여력. 애플·아멕스·코카콜라 등 우량주 포트폴리오. 장기 방어적 성장의 정석.',
+   risk:'버핏 승계 불확실성'},
+  {sym:'005930.KS',name:'삼성전자',sector:'종합반도체',score:82,
+   reason:'HBM·DRAM 세계 1위로 AI 메모리 수요 폭증 수혜. 역사적 저점 수준 PBR. 배당수익률 2%+. 한국 대표 우량주로 10년 보유 시 리스크 대비 수익 매력 최상.',
+   risk:'HBM 경쟁 심화 · 반도체 사이클'},
+  {sym:'PLTR',name:'Palantir',sector:'AI 데이터분석',score:80,
+   reason:'AIP 플랫폼으로 미 정부·기업 AI 데이터 분석 독점. 국방부·NATO 장기 계약 확보. S&P500 편입으로 기관 수요 급증. 소프트웨어 마진율 70%+ 구조적 개선.',
+   risk:'고밸류에이션 · 정부 예산 변동'}
+];
+
+function openAI(){
+  document.getElementById('ai-ov').classList.add('on');
+  renderAIPicks();
+  if(!mktFetched){mktFetched=true;loadMktAll();}
+}
+function closeAI(){document.getElementById('ai-ov').classList.remove('on');}
+function closeAIDrw(e){if(e.target.id==='ai-ov')closeAI();}
+
+function setMktPeriod(p){
+  mktPeriod=p;
+  document.querySelectorAll('.per-btn').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);});
+  renderMkt();
+}
+
+function loadMktAll(){
+  var done=0,total=MKT_SYMS.length;
+  MKT_SYMS.forEach(function(m,idx){
+    setTimeout(function(){
+      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(m.sym)+'?interval=1d&range=2mo';
+      var settled=false;
+      function onData(raw){
+        if(settled)return;
+        try{
+          var js=typeof raw==='string'?JSON.parse(raw):raw;
+          var res=js.chart.result[0];
+          var closes=res.indicators.quote[0].close.filter(function(c){return c!=null;});
+          var prices=res.indicators.quote[0];
+          if(closes.length>=2){
+            var last=closes[closes.length-1];
+            var prev=closes[closes.length-2];
+            var w=closes[Math.max(0,closes.length-6)];
+            var mo=closes[Math.max(0,closes.length-22)];
+            mktCache[m.sym]={price:last,day:(last-prev)/prev*100,week:(last-w)/w*100,month:(last-mo)/mo*100};
+            settled=true;
+          }
+        }catch(e){}
+      }
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+        .then(function(r){return r.json();})
+        .then(function(d){onData(d.contents||'{}');})
+        .catch(function(){});
+      fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+        .then(function(r){return r.json();})
+        .then(function(d){onData(d);})
+        .catch(function(){});
+      setTimeout(function(){
+        done++;
+        if(done===total)renderMkt();
+      },3500);
+    },idx*400);
+  });
+}
+
+function renderMkt(){
+  var f=mktPeriod;
+  var h='',pos=0,neg=0;
+  MKT_SYMS.forEach(function(m){
+    var c=mktCache[m.sym];
+    var pct=c?c[f]:null;
+    var priceStr=c?formatMktPrice(m.sym,c.price):'—';
+    var cls='',pctStr='—';
+    if(pct!==null){
+      // VIX: rising = fear (red), falling = good (green)
+      var isVix=(m.sym==='^VIX');
+      var isPos=isVix?(pct<0):(pct>=0);
+      if(isPos)pos++;else neg++;
+      cls=isPos?'up':'dn';
+      pctStr=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+    }
+    h+='<div class="mkt-row"><div class="mkt-lft"><span class="mkt-flag">'+m.flag+'</span><div><div class="mkt-nm">'+m.name+'</div><div class="mkt-prc">'+priceStr+'</div></div></div><div class="mkt-pct '+cls+'">'+pctStr+'</div></div>';
+  });
+  var total=pos+neg;
+  var summary='';
+  if(total>0){
+    var ratio=pos/total;
+    if(ratio>=0.7)summary='🟢 전반적 상승세 — 위험자산 선호 국면';
+    else if(ratio<=0.3)summary='🔴 전반적 하락세 — 방어적 접근 권고';
+    else summary='🟡 혼조세 — 관망 또는 분할매수 권고';
+    var pLabel={day:'오늘',week:'이번주',month:'이번달'}[f]||f;
+    summary+=' ('+pLabel+' 기준 '+pos+'/'+total+' 지수 양호)';
+  } else {
+    summary='데이터 불러오는 중... 잠시만 기다려주세요';
+  }
+  document.getElementById('mkt-summary').textContent=summary;
+  document.getElementById('mktdata').innerHTML=h||'<div style="color:#4a5568;font-size:12px;text-align:center;padding:10px">데이터를 불러오지 못했습니다</div>';
+}
+
+function formatMktPrice(sym,price){
+  if(!price)return'';
+  if(sym==='^KS11'||sym==='^KQ11')return Math.round(price).toLocaleString('ko-KR')+'pt';
+  if(sym==='^TNX')return price.toFixed(2)+'%';
+  if(sym==='^VIX')return price.toFixed(2);
+  if(sym==='GC=F')return'$'+Math.round(price).toLocaleString();
+  if(sym==='^GSPC'||sym==='^IXIC'||sym==='^DJI')return Math.round(price).toLocaleString();
+  return price.toFixed(2);
+}
+
+function renderAIPicks(){
+  var el=document.getElementById('aipicks');
+  if(el.children.length)return;
+  el.innerHTML=AI_PICKS.map(function(p){
+    var w=p.score+'%';
+    return '<div class="pk-card"><div class="pk-top"><div class="pk-info"><div class="pk-sym">'+p.sym+'</div><div class="pk-nm">'+p.name+'</div></div><div class="pk-sec">'+p.sector+'</div></div><div class="pk-sc"><span class="pk-sclbl">AI 확신도</span><div class="pk-bar"><div class="pk-fill" style="width:'+w+'"></div></div><span class="pk-scnum">'+p.score+'</span></div><div class="pk-rs">'+p.reason+'</div><div class="pk-rk">⚠️ 리스크: '+p.risk+'</div></div>';
+  }).join('');
+}
+// ─────────────────────────────────────────────
 
 renderStocks();
 renderSim();
