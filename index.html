@@ -275,6 +275,35 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
   </div>
 </div>
 
+<div class="ov" id="bm-modal" onclick="closeBMOv(event)">
+  <div class="sh">
+    <div class="sh-t" id="bm-title">물타기</div>
+    <div id="bm-cur-row" style="display:none;margin-bottom:10px">
+      <div class="cb" style="justify-content:center">
+        <button class="cbb on" id="bm-usd" onclick="setBMCur('USD')">$ 달러</button>
+        <button class="cbb" id="bm-krw" onclick="setBMCur('KRW')">₩ 원화</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div style="flex:1">
+        <div class="sh-d" style="margin-bottom:4px" id="bm-price-lbl">추가 매수단가</div>
+        <input class="sh-i" id="bm-price" type="number" inputmode="decimal" placeholder="단가" oninput="updateBMPreview()">
+      </div>
+      <div style="flex:1">
+        <div class="sh-d" style="margin-bottom:4px">수량 (주)</div>
+        <input class="sh-i" id="bm-qty" type="number" inputmode="decimal" placeholder="수량" oninput="updateBMPreview()">
+      </div>
+    </div>
+    <div class="sh-d" style="margin-bottom:4px">또는 매수총액 <span style="font-size:10px;color:#4a5568">(입력 시 수량 자동계산)</span></div>
+    <input class="sh-i" id="bm-total" type="number" inputmode="decimal" placeholder="총액 입력" oninput="updateBMPreview()" style="margin-bottom:10px">
+    <div id="bm-preview" style="font-size:12px;color:#8899aa;background:#0d1117;border-radius:6px;padding:8px 10px;margin-bottom:12px;min-height:32px"></div>
+    <div class="sh-b">
+      <button class="btn btn-g" onclick="closeBM()">취소</button>
+      <button class="btn btn-b" onclick="saveBM()">물타기</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -696,15 +725,66 @@ function delStock(id){
   saveS();renderStocks();renderSim();
 }
 
+var bmId=null,bmCur='KRW';
 function buyMore(id){
-  var p=prompt('추가 매수 단가 (₩)');
-  var q=prompt('추가 매수 수량');
-  if(!p||!q)return;
-  var s=stocks.find(function(s){return s.id===id;});if(!s)return;
-  var ap=parseFloat(p),aq=parseFloat(q),tq=s.qty+aq;
-  s.price=(s.price*s.qty+ap*aq)/tq;s.qty=tq;
-  saveS();renderStocks();renderSim();toast('✅ 물타기 완료!');
+  bmId=id;
+  var s=stocks.find(function(x){return x.id===id;});if(!s)return;
+  var isUS=s.sym&&!s.sym.endsWith('.KS')&&!s.sym.endsWith('.KQ');
+  bmCur=isUS?'USD':'KRW';
+  document.getElementById('bm-title').textContent=s.name+' 물타기';
+  document.getElementById('bm-cur-row').style.display=isUS?'block':'none';
+  document.getElementById('bm-usd').className='cbb'+(bmCur==='USD'?' on':'');
+  document.getElementById('bm-krw').className='cbb'+(bmCur==='KRW'?' on':'');
+  document.getElementById('bm-price-lbl').textContent='추가 매수단가 '+(isUS?'($)':'(₩)');
+  document.getElementById('bm-price').value='';
+  document.getElementById('bm-qty').value='';
+  document.getElementById('bm-total').value='';
+  document.getElementById('bm-preview').innerHTML='단가와 수량(또는 총액)을 입력하세요';
+  document.getElementById('bm-modal').classList.add('on');
+  setTimeout(function(){document.getElementById('bm-price').focus();},300);
 }
+function setBMCur(c){
+  bmCur=c;
+  document.getElementById('bm-usd').className='cbb'+(c==='USD'?' on':'');
+  document.getElementById('bm-krw').className='cbb'+(c==='KRW'?' on':'');
+  document.getElementById('bm-price-lbl').textContent='추가 매수단가 '+(c==='USD'?'($)':'(₩)');
+  updateBMPreview();
+}
+function updateBMPreview(){
+  var s=stocks.find(function(x){return x.id===bmId;});if(!s)return;
+  var pv=parseFloat(document.getElementById('bm-price').value)||0;
+  var qv=parseFloat(document.getElementById('bm-qty').value)||0;
+  var tv=parseFloat(document.getElementById('bm-total').value)||0;
+  var addKRW=bmCur==='USD'?pv*exRate:pv;
+  var addQty=qv;
+  if(tv&&addKRW)addQty=Math.floor(tv/addKRW);
+  if(!addKRW||!addQty){document.getElementById('bm-preview').innerHTML='단가와 수량(또는 총액)을 입력하세요';return;}
+  var newQty=s.qty+addQty;
+  var newAvg=(s.price*s.qty+addKRW*addQty)/newQty;
+  var isUS=s.sym&&!s.sym.endsWith('.KS')&&!s.sym.endsWith('.KQ');
+  function ps(krw){return isUS?'$'+(krw/exRate).toFixed(2)+' <span style="color:#4a5568">('+fmt(krw)+')</span>':fmt(krw);}
+  document.getElementById('bm-preview').innerHTML=
+    '평균단가 '+ps(s.price)+' → <b style="color:#4f9eff">'+ps(newAvg)+'</b><br>'
+    +'보유수량 '+s.qty+'주 → <b style="color:#4f9eff">'+newQty+'주</b>'
+    +(tv&&addKRW?' <span style="color:#4a5568">('+addQty+'주 추가)</span>':'');
+}
+function saveBM(){
+  var s=stocks.find(function(x){return x.id===bmId;});if(!s)return;
+  var pv=parseFloat(document.getElementById('bm-price').value)||0;
+  var qv=parseFloat(document.getElementById('bm-qty').value)||0;
+  var tv=parseFloat(document.getElementById('bm-total').value)||0;
+  var addKRW=bmCur==='USD'?pv*exRate:pv;
+  if(!addKRW){toast('매수단가를 입력하세요');return;}
+  var addQty=qv;
+  if(tv)addQty=Math.floor(tv/addKRW);
+  if(!addQty){toast('수량 또는 매수총액을 입력하세요');return;}
+  var newQty=s.qty+addQty;
+  s.price=(s.price*s.qty+addKRW*addQty)/newQty;
+  s.qty=newQty;
+  saveS();renderStocks();renderSim();closeBM();toast('✅ 물타기 완료!');
+}
+function closeBM(){document.getElementById('bm-modal').classList.remove('on');bmId=null;}
+function closeBMOv(e){if(e.target.id==='bm-modal')closeBM();}
 
 function totalEval(){return stocks.reduce(function(s,x){return s+(x.cur||x.price)*x.qty;},0);}
 
@@ -748,8 +828,7 @@ function renderStocks(){
         +'<div><div class="sml">평가금액</div><div class="smv '+(hasCur?cls:'')+'">'+fmt(ev)+'</div></div>'
         +'<div><div class="sml">수익률</div><div class="smv '+(hasCur?cls:'')+'">'+sg+pr.toFixed(2)+'%</div></div></div>'
       +'<div class="sa">'
-        +'<button class="btn-s" onclick="editCurPrice('+s.id+')" style="flex:1">현재가</button>'
-        +'<button class="btn-s" onclick="buyMore('+s.id+')" style="flex:1">물타기</button>'
+        +'<button class="btn-s" onclick="buyMore('+s.id+')" style="flex:2">물타기</button>'
         +'<button class="btn-r" onclick="delStock('+s.id+')">삭제</button>'
       +'</div></div>';
   });
@@ -765,16 +844,6 @@ function upSum(b,e){
   re.textContent=(r>=0?'+':'')+r.toFixed(2)+'%';re.className='sv lg '+(r>=0?'up':'dn');
 }
 
-var curEditId=null;
-function editCurPrice(id){
-  curEditId=id;
-  var s=stocks.find(function(x){return x.id===id;});if(!s)return;
-  document.getElementById('mt').textContent=s.name+' 현재가';
-  document.getElementById('md').textContent='현재 시장가를 원화(₩)로 입력하세요';
-  document.getElementById('mi').value=s.cur||Math.round(s.price);
-  document.getElementById('modal').classList.add('on');
-  setTimeout(function(){document.getElementById('mi').focus();},300);
-}
 
 function fetchAllPrices(silent){
   var hasSym=stocks.filter(function(s){return s.sym;});
@@ -1203,16 +1272,11 @@ function openM(key,title,unit){
   document.getElementById('modal').classList.add('on');
   setTimeout(function(){document.getElementById('mi').focus();},300);
 }
-function closeM(){document.getElementById('modal').classList.remove('on');curEditId=null;}
+function closeM(){document.getElementById('modal').classList.remove('on');}
 function closeOv(e){if(e.target.id==='modal')closeM();}
 function saveM(){
   var v=parseFloat(document.getElementById('mi').value);
   if(isNaN(v)||v<0){toast('올바른 값을 입력해주세요');return;}
-  if(curEditId!==null){
-    var s=stocks.find(function(x){return x.id===curEditId;});
-    if(s){s.cur=v;saveS();}
-    curEditId=null;closeM();renderStocks();renderSim();toast('✅ 현재가 저장!');return;
-  }
   sim[mKey]=v;
   localStorage.setItem('wc_sim',JSON.stringify(sim));
   closeM();renderSim();toast('✅ 저장됐어요!');
