@@ -190,6 +190,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
     <div class="si"><div class="sl">총 수익금</div><div class="sv" id="s3">₩0</div></div>
     <div class="si"><div class="sl">총 수익률</div><div class="sv lg" id="s4">0.00%</div></div>
   </div>
+  <div id="price-upd" style="text-align:right;font-size:11px;color:#4a5568;padding:2px 4px 0">시세 갱신 중...</div>
   <div class="box">
     <div class="bh">➕ 새 종목 등록
       <div class="cb">
@@ -767,7 +768,8 @@ function editCurPrice(id){
 function fetchAllPrices(silent){
   var hasSym=stocks.filter(function(s){return s.sym;});
   if(!hasSym.length)return;
-  if(!silent)toast('📡 시세 갱신 중...');
+  var updEl=document.getElementById('price-upd');
+  if(updEl)updEl.textContent='⏳ 시세 갱신 중...';
   var syms=hasSym.map(function(s){return s.sym;}).join(',');
   var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms);
   var settled=false;
@@ -790,17 +792,25 @@ function fetchAllPrices(silent){
       });
       saveS();renderStocks();renderSim();
       if(!silent)toast('✅ '+cnt+'개 종목 시세 갱신!');
-      var el=document.getElementById('price-upd');
-      if(el)el.textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
+      if(updEl)updEl.textContent='갱신완료: '+new Date().toLocaleTimeString('ko-KR')+' ('+cnt+'종목)';
     }catch(e){}
   }
+  // 3개 CORS 프록시 병렬 시도
   fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
     .then(function(r){return r.json();})
     .then(function(d){onData(d.contents||'{}');}).catch(function(){});
   fetch('https://corsproxy.io/?'+encodeURIComponent(url))
     .then(function(r){return r.json();})
     .then(onData).catch(function(){});
-  setTimeout(function(){if(!settled&&!silent)toast('❌ 자동갱신 실패 — 수동 입력하세요');},7000);
+  fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(onData).catch(function(){});
+  setTimeout(function(){
+    if(!settled){
+      if(updEl)updEl.textContent='⚠️ 시세 갱신 실패 ('+new Date().toLocaleTimeString('ko-KR')+')';
+      if(!silent)toast('❌ 시세 갱신 실패 — 현재가 수동 입력하세요');
+    }
+  },10000);
 }
 
 var CAGR={AAPL:25.3,MSFT:28.1,NVDA:55.2,GOOGL:22.4,AMZN:31.7,TSLA:48.6,META:20.1,NFLX:35.4,AMD:42.1,INTC:8.3,QCOM:18.7,TSM:22.9,PLTR:38.2,SOFI:12.1,IONQ:61.4,SPY:13.2,QQQ:18.5,VOO:13.0,SCHD:12.4,SOXL:62.1,TQQQ:35.8};
@@ -1384,7 +1394,7 @@ function renderAIPicks(){
 
 renderStocks();
 renderSim();
-fetchAllPrices(true);
+fetchAllPrices(false);
 setInterval(function(){fetchAllPrices(true);},60000);
 </script>
 </body>
