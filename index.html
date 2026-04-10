@@ -215,6 +215,7 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
       <button class="btn btn-b" onclick="addStock()">📈 종목 등록하기</button>
     </div>
   </div>
+  <button class="btn btn-g" onclick="fetchAllPrices()" style="margin-bottom:10px;font-size:13px">📡 현재가 자동갱신</button>
   <div id="slist"></div>
   <div class="gb">
     <button class="btn btn-g" onclick="doBackup()">📥 백업 뽑기</button>
@@ -705,6 +706,8 @@ function buyMore(id){
   saveS();renderStocks();renderSim();toast('✅ 물타기 완료!');
 }
 
+function totalEval(){return stocks.reduce(function(s,x){return s+(x.cur||x.price)*x.qty;},0);}
+
 function renderStocks(){
   var el=document.getElementById('slist');
   if(!stocks.length){
@@ -713,10 +716,31 @@ function renderStocks(){
   }
   var tb=0,te=0,h='';
   stocks.forEach(function(s){
-    var b=s.price*s.qty,ev=b;tb+=b;te+=ev;
+    var ep=s.cur||s.price;
+    var b=s.price*s.qty,ev=ep*s.qty;
+    tb+=b;te+=ev;
     var pnl=ev-b,pr=b?(pnl/b*100):0;
+    var hasCur=!!s.cur;
     var cls=pnl>=0?'up':'dn',sg=pnl>=0?'+':'';
-    h+='<div class="sc"><div class="st"><div><span class="sn">'+s.name+'</span>'+(s.sym?'<span class="stk">'+s.sym+'</span>':'')+'</div><div class="sp"><div class="spn '+cls+'">'+sg+fmt(pnl)+'</div><div class="spr '+cls+'">'+sg+pr.toFixed(2)+'%</div></div></div><div class="sm"><div><div class="sml">매수단가</div><div class="smv">'+fmt(s.price)+'</div></div><div><div class="sml">보유수량</div><div class="smv">'+s.qty.toLocaleString()+'주</div></div><div><div class="sml">매수금액</div><div class="smv">'+fmt(b)+'</div></div></div><div class="sa"><button class="btn-s" style="flex:1" onclick="buyMore('+s.id+')">+ 물타기</button><button class="btn-r" onclick="delStock('+s.id+')">삭제</button></div></div>';
+    var curCls=hasCur?(s.cur>=s.price?'up':'dn'):'';
+    var curStr=hasCur?'<span class="'+curCls+'">'+fmt(s.cur)+'</span>':'<span style="color:#4a5568">— 미입력</span>';
+    var topRight=hasCur
+      ?'<div class="spn '+cls+'">'+sg+fmt(pnl)+'</div><div class="spr '+cls+'">'+sg+pr.toFixed(2)+'%</div>'
+      :'<div style="font-size:11px;color:#4a5568;margin-top:4px">현재가 미입력</div>';
+    h+='<div class="sc">'
+      +'<div class="st"><div><span class="sn">'+s.name+'</span>'+(s.sym?'<span class="stk">'+s.sym+'</span>':'')+'</div><div class="sp">'+topRight+'</div></div>'
+      +'<div class="sm"><div><div class="sml">매수단가</div><div class="smv">'+fmt(s.price)+'</div></div>'
+        +'<div><div class="sml">현재가</div><div class="smv">'+curStr+'</div></div>'
+        +'<div><div class="sml">수량</div><div class="smv">'+s.qty.toLocaleString()+'주</div></div></div>'
+      +'<div class="sm" style="border-top:1px solid #1e2a3a;padding-top:8px;margin-top:-4px">'
+        +'<div><div class="sml">매수금액</div><div class="smv">'+fmt(b)+'</div></div>'
+        +'<div><div class="sml">평가금액</div><div class="smv '+(hasCur?cls:'')+'">'+fmt(ev)+'</div></div>'
+        +'<div><div class="sml">수익률</div><div class="smv '+(hasCur?cls:'')+'">'+sg+pr.toFixed(2)+'%</div></div></div>'
+      +'<div class="sa">'
+        +'<button class="btn-s" onclick="editCurPrice('+s.id+')" style="flex:1">현재가</button>'
+        +'<button class="btn-s" onclick="buyMore('+s.id+')" style="flex:1">물타기</button>'
+        +'<button class="btn-r" onclick="delStock('+s.id+')">삭제</button>'
+      +'</div></div>';
   });
   el.innerHTML=h;upSum(tb,te);
 }
@@ -728,6 +752,51 @@ function upSum(b,e){
   var pe=document.getElementById('s3'),re=document.getElementById('s4');
   pe.textContent=(p>=0?'+':'')+fmt(p);pe.className='sv '+(p>=0?'up':'dn');
   re.textContent=(r>=0?'+':'')+r.toFixed(2)+'%';re.className='sv lg '+(r>=0?'up':'dn');
+}
+
+var curEditId=null;
+function editCurPrice(id){
+  curEditId=id;
+  var s=stocks.find(function(x){return x.id===id;});if(!s)return;
+  document.getElementById('mt').textContent=s.name+' 현재가';
+  document.getElementById('md').textContent='현재 시장가를 원화(₩)로 입력하세요';
+  document.getElementById('mi').value=s.cur||Math.round(s.price);
+  document.getElementById('modal').classList.add('on');
+  setTimeout(function(){document.getElementById('mi').focus();},300);
+}
+
+function fetchAllPrices(){
+  var hasSym=stocks.filter(function(s){return s.sym;});
+  if(!hasSym.length){toast('티커가 있는 종목이 없어요');return;}
+  toast('📡 시세 갱신 중...');
+  var syms=hasSym.map(function(s){return s.sym;}).join(',');
+  var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms);
+  var settled=false;
+  function onData(raw){
+    if(settled)return;
+    try{
+      var js=typeof raw==='string'?JSON.parse(raw):raw;
+      var quotes=(js.quoteResponse&&js.quoteResponse.result)||[];
+      if(!quotes.length)return;
+      settled=true;
+      quotes.forEach(function(q){
+        var s=stocks.find(function(x){return x.sym===q.symbol;});
+        if(s&&q.regularMarketPrice){
+          var mp=q.regularMarketPrice;
+          var isKRW=s.sym.endsWith('.KS')||s.sym.endsWith('.KQ');
+          s.cur=Math.round(isKRW?mp:mp*exRate);
+        }
+      });
+      saveS();renderStocks();renderSim();toast('✅ '+quotes.length+'개 종목 시세 갱신!');
+    }catch(e){}
+  }
+  fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(function(d){onData(d.contents||'{}');}).catch(function(){});
+  fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+    .then(function(r){return r.json();})
+    .then(onData).catch(function(){});
+  setTimeout(function(){if(!settled)toast('❌ 자동갱신 실패 — 수동으로 입력하세요');},7000);
 }
 
 var CAGR={AAPL:25.3,MSFT:28.1,NVDA:55.2,GOOGL:22.4,AMZN:31.7,TSLA:48.6,META:20.1,NFLX:35.4,AMD:42.1,INTC:8.3,QCOM:18.7,TSM:22.9,PLTR:38.2,SOFI:12.1,IONQ:61.4,SPY:13.2,QQQ:18.5,VOO:13.0,SCHD:12.4,SOXL:62.1,TQQQ:35.8};
@@ -926,15 +995,18 @@ function loadPfNews(){
 
 function totalBuy(){return stocks.reduce(function(s,x){return s+x.price*x.qty;},0);}
 function renderSim(){
-  var org=totalBuy();
-  document.getElementById('sori').innerHTML='💼 현재 포트폴리오: <b>'+fmt(org)+'</b> → 시작 원금';
+  var buy=totalBuy(),org=totalEval();
+  var soriTxt=org===buy
+    ?'💼 매수금액: <b>'+fmt(org)+'</b> → 시뮬레이션 시작원금'
+    :'💼 매수 <b>'+fmt(buy)+'</b> → 현재가 <b>'+fmt(org)+'</b> → 시뮬레이션 시작원금';
+  document.getElementById('sori').innerHTML=soriTxt;
   document.getElementById('sp1').textContent=sim.rate+'% ✏️';
   document.getElementById('sp2').textContent=fk(sim.daily)+'원 ✏️';
   document.getElementById('sp3').textContent=fk(sim.monthly)+'원 ✏️';
   document.getElementById('sp4').textContent=fk(sim.addFrom)+'원 ✏️';
   document.getElementById('sp5').textContent=sim.addFromYear+'년차 ✏️';
   document.getElementById('sp6').textContent=sim.divRate+'% ✏️';
-  if(!org){
+  if(!buy){
     document.getElementById('simres').innerHTML=[1,3,5,7,10,15,20].map(function(y){
       return '<div class="rc"><div class="ry">'+y+'년 후</div><div class="ra" style="color:#4a5568">₩0</div><div class="rd">종목 등록 필요</div></div>';
     }).join('');
@@ -959,7 +1031,7 @@ var simChart=null,simHistSeries=null,simProjSeries=null,simMode='year',simCooldo
 function d2s(d){var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
 
 function buildSimChartData(mode){
-  var org=totalBuy();
+  var org=totalEval();
   var today=new Date();today.setHours(0,0,0,0);
   var todayStr=d2s(today);
   var r=sim.rate/100,dv=sim.divRate/100;
@@ -1111,11 +1183,16 @@ function openM(key,title,unit){
   document.getElementById('modal').classList.add('on');
   setTimeout(function(){document.getElementById('mi').focus();},300);
 }
-function closeM(){document.getElementById('modal').classList.remove('on');}
+function closeM(){document.getElementById('modal').classList.remove('on');curEditId=null;}
 function closeOv(e){if(e.target.id==='modal')closeM();}
 function saveM(){
   var v=parseFloat(document.getElementById('mi').value);
   if(isNaN(v)||v<0){toast('올바른 값을 입력해주세요');return;}
+  if(curEditId!==null){
+    var s=stocks.find(function(x){return x.id===curEditId;});
+    if(s){s.cur=v;saveS();}
+    curEditId=null;closeM();renderStocks();renderSim();toast('✅ 현재가 저장!');return;
+  }
   sim[mKey]=v;
   localStorage.setItem('wc_sim',JSON.stringify(sim));
   closeM();renderSim();toast('✅ 저장됐어요!');
