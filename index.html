@@ -770,47 +770,42 @@ function fetchAllPrices(silent){
   if(!hasSym.length)return;
   var updEl=document.getElementById('price-upd');
   if(updEl)updEl.textContent='⏳ 시세 갱신 중...';
-  var syms=hasSym.map(function(s){return s.sym;}).join(',');
-  var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms);
-  var settled=false;
-  function onData(raw){
-    if(settled)return;
-    try{
-      var js=typeof raw==='string'?JSON.parse(raw):raw;
-      var quotes=(js.quoteResponse&&js.quoteResponse.result)||[];
-      if(!quotes.length)return;
-      settled=true;
-      var cnt=0;
-      quotes.forEach(function(q){
-        var s=stocks.find(function(x){return x.sym===q.symbol;});
-        if(s&&q.regularMarketPrice){
-          var mp=q.regularMarketPrice;
+  var total=hasSym.length,done=0,cnt=0;
+  hasSym.forEach(function(s,idx){
+    setTimeout(function(){
+      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(s.sym)+'?interval=1d&range=5d';
+      var settled=false;
+      function onData(raw){
+        if(settled)return;
+        try{
+          var js=typeof raw==='string'?JSON.parse(raw):raw;
+          var res=js.chart.result[0];
+          var closes=res.indicators.quote[0].close.filter(function(c){return c!=null;});
+          if(!closes.length)return;
+          settled=true;
+          var mp=closes[closes.length-1];
           var isKRW=s.sym.endsWith('.KS')||s.sym.endsWith('.KQ');
           s.cur=Math.round(isKRW?mp:mp*exRate);
           cnt++;
+        }catch(e){}
+        done++;
+        if(done===total){
+          saveS();renderStocks();renderSim();
+          if(!silent)toast('✅ '+cnt+'개 종목 시세 갱신!');
+          if(updEl)updEl.textContent='갱신완료: '+new Date().toLocaleTimeString('ko-KR')+' ('+cnt+'/'+total+'종목)';
         }
-      });
-      saveS();renderStocks();renderSim();
-      if(!silent)toast('✅ '+cnt+'개 종목 시세 갱신!');
-      if(updEl)updEl.textContent='갱신완료: '+new Date().toLocaleTimeString('ko-KR')+' ('+cnt+'종목)';
-    }catch(e){}
-  }
-  // 3개 CORS 프록시 병렬 시도
-  fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
-    .then(function(r){return r.json();})
-    .then(function(d){onData(d.contents||'{}');}).catch(function(){});
-  fetch('https://corsproxy.io/?'+encodeURIComponent(url))
-    .then(function(r){return r.json();})
-    .then(onData).catch(function(){});
-  fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url))
-    .then(function(r){return r.json();})
-    .then(onData).catch(function(){});
-  setTimeout(function(){
-    if(!settled){
-      if(updEl)updEl.textContent='⚠️ 시세 갱신 실패 ('+new Date().toLocaleTimeString('ko-KR')+')';
-      if(!silent)toast('❌ 시세 갱신 실패 — 현재가 수동 입력하세요');
-    }
-  },10000);
+      }
+      function onFail(){
+        if(!settled){done++;if(done===total){saveS();renderStocks();renderSim();if(updEl)updEl.textContent='⚠️ 일부 갱신 실패: '+new Date().toLocaleTimeString('ko-KR');}}
+      }
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+        .then(function(r){return r.json();})
+        .then(function(d){onData(d.contents||'{}');}).catch(onFail);
+      fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+        .then(function(r){return r.json();})
+        .then(onData).catch(function(){});
+    },idx*300);
+  });
 }
 
 var CAGR={AAPL:25.3,MSFT:28.1,NVDA:55.2,GOOGL:22.4,AMZN:31.7,TSLA:48.6,META:20.1,NFLX:35.4,AMD:42.1,INTC:8.3,QCOM:18.7,TSM:22.9,PLTR:38.2,SOFI:12.1,IONQ:61.4,SPY:13.2,QQQ:18.5,VOO:13.0,SCHD:12.4,SOXL:62.1,TQQQ:35.8};
