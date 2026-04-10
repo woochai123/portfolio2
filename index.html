@@ -215,7 +215,6 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
       <button class="btn btn-b" onclick="addStock()">📈 종목 등록하기</button>
     </div>
   </div>
-  <button class="btn btn-g" onclick="fetchAllPrices()" style="margin-bottom:10px;font-size:13px">📡 현재가 자동갱신</button>
   <div id="slist"></div>
   <div class="gb">
     <button class="btn btn-g" onclick="doBackup()">📥 백업 뽑기</button>
@@ -765,10 +764,10 @@ function editCurPrice(id){
   setTimeout(function(){document.getElementById('mi').focus();},300);
 }
 
-function fetchAllPrices(){
+function fetchAllPrices(silent){
   var hasSym=stocks.filter(function(s){return s.sym;});
-  if(!hasSym.length){toast('티커가 있는 종목이 없어요');return;}
-  toast('📡 시세 갱신 중...');
+  if(!hasSym.length)return;
+  if(!silent)toast('📡 시세 갱신 중...');
   var syms=hasSym.map(function(s){return s.sym;}).join(',');
   var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms);
   var settled=false;
@@ -779,15 +778,20 @@ function fetchAllPrices(){
       var quotes=(js.quoteResponse&&js.quoteResponse.result)||[];
       if(!quotes.length)return;
       settled=true;
+      var cnt=0;
       quotes.forEach(function(q){
         var s=stocks.find(function(x){return x.sym===q.symbol;});
         if(s&&q.regularMarketPrice){
           var mp=q.regularMarketPrice;
           var isKRW=s.sym.endsWith('.KS')||s.sym.endsWith('.KQ');
           s.cur=Math.round(isKRW?mp:mp*exRate);
+          cnt++;
         }
       });
-      saveS();renderStocks();renderSim();toast('✅ '+quotes.length+'개 종목 시세 갱신!');
+      saveS();renderStocks();renderSim();
+      if(!silent)toast('✅ '+cnt+'개 종목 시세 갱신!');
+      var el=document.getElementById('price-upd');
+      if(el)el.textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
     }catch(e){}
   }
   fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
@@ -796,7 +800,7 @@ function fetchAllPrices(){
   fetch('https://corsproxy.io/?'+encodeURIComponent(url))
     .then(function(r){return r.json();})
     .then(onData).catch(function(){});
-  setTimeout(function(){if(!settled)toast('❌ 자동갱신 실패 — 수동으로 입력하세요');},7000);
+  setTimeout(function(){if(!settled&&!silent)toast('❌ 자동갱신 실패 — 수동 입력하세요');},7000);
 }
 
 var CAGR={AAPL:25.3,MSFT:28.1,NVDA:55.2,GOOGL:22.4,AMZN:31.7,TSLA:48.6,META:20.1,NFLX:35.4,AMD:42.1,INTC:8.3,QCOM:18.7,TSM:22.9,PLTR:38.2,SOFI:12.1,IONQ:61.4,SPY:13.2,QQQ:18.5,VOO:13.0,SCHD:12.4,SOXL:62.1,TQQQ:35.8};
@@ -1380,6 +1384,8 @@ function renderAIPicks(){
 
 renderStocks();
 renderSim();
+fetchAllPrices(true);
+setInterval(function(){fetchAllPrices(true);},60000);
 </script>
 </body>
 </html>
