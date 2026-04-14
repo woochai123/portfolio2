@@ -1553,34 +1553,56 @@ function loadFlowData(){
   var cfg=getFlowCfg(flowPeriod);
   var key=flowMarket+'_'+flowPeriod;
   if(flowCache[key]){renderFlowList();return;}
-  document.getElementById('flow-list').innerHTML='<div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">⏳ '+cands.length+'개 종목 분석 중...</div>';
-  var results={},done=0,total=cands.length;
-  cands.forEach(function(sym,idx){
-    setTimeout(function(){
-      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range='+cfg.range;
-      var settled=false;
-      function onData(raw){
-        if(settled)return;
-        try{
-          var js=typeof raw==='string'?JSON.parse(raw):raw;
-          var res=js.chart.result[0];
-          var closes=res.indicators.quote[0].close.filter(function(c){return c!=null;});
-          if(closes.length>=2){
-            var last=closes[closes.length-1];
-            var prev=closes[Math.max(0,closes.length-1-cfg.lb)];
-            results[sym]={pct:(last-prev)/prev*100,price:last};
-            settled=true;
-          }
-        }catch(e){}
-        done++;
-        if(done===total){flowCache[key]=results;renderFlowList();}
-      }
-      function onFail(){done++;if(done===total){flowCache[key]=results;renderFlowList();}}
-      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
-        .then(function(r){return r.json();}).then(function(d){onData(d.contents||'{}');}).catch(onFail);
-      fetch('https://corsproxy.io/?'+encodeURIComponent(url))
-        .then(function(r){return r.json();}).then(onData).catch(function(){});
-    },idx*200);
+  document.getElementById('flow-list').innerHTML='<div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">⏳ 분석 중...</div>';
+  var results={},done=0,total=cands.length,rendered=false;
+
+  function tryRender(force){
+    var cnt=Object.keys(results).length;
+    if(!rendered && (cnt>=10||force)){
+      rendered=true;
+      flowCache[key]=results;
+      renderFlowList();
+    } else if(rendered && force){
+      // 전체 완료 후 최종 갱신
+      flowCache[key]=results;
+      renderFlowList();
+    }
+  }
+
+  cands.forEach(function(sym){
+    var url1='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range='+cfg.range;
+    var url2='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range='+cfg.range;
+    var settled=false;
+
+    function onData(raw){
+      if(settled)return;
+      try{
+        var js=typeof raw==='string'?JSON.parse(raw):raw;
+        var res=js.chart.result[0];
+        var closes=res.indicators.quote[0].close.filter(function(c){return c!=null;});
+        if(closes.length>=2){
+          var last=closes[closes.length-1];
+          var prev=closes[Math.max(0,closes.length-1-cfg.lb)];
+          results[sym]={pct:(last-prev)/prev*100};
+          settled=true;
+          tryRender(false);
+        }
+      }catch(e){}
+    }
+    function onDone(){
+      done++;
+      if(done===total)tryRender(true);
+    }
+
+    // ① 직접 fetch (프록시 없이 — 빠름, 가끔 허용됨)
+    fetch(url1).then(function(r){return r.json();}).then(function(d){onData(d);onDone();}).catch(function(){
+      // ② allorigins 프록시
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url2))
+        .then(function(r){return r.json();}).then(function(d){onData(d.contents||'{}');onDone();}).catch(onDone);
+    });
+    // ③ corsproxy 병렬 (빠른 쪽이 먼저 settle)
+    fetch('https://corsproxy.io/?'+encodeURIComponent(url2))
+      .then(function(r){return r.json();}).then(onData).catch(function(){});
   });
 }
 function renderFlowList(){
