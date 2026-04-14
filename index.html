@@ -166,6 +166,22 @@ body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#0d0f14;colo
       <div id="mktdata"><div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">📡 시장 데이터 로딩 중...</div></div>
     </div>
     <div class="ai-sec">
+      <div class="ai-ttl">🔥 자금 쏠림 TOP 10</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="per-btns" style="margin:0;gap:4px;flex:1">
+          <button class="per-btn on" data-fp="day" onclick="setFlowPeriod('day')">일별</button>
+          <button class="per-btn" data-fp="week" onclick="setFlowPeriod('week')">주별</button>
+          <button class="per-btn" data-fp="month" onclick="setFlowPeriod('month')">월별</button>
+          <button class="per-btn" data-fp="year" onclick="setFlowPeriod('year')">연별</button>
+        </div>
+        <div style="display:flex;gap:4px;margin-left:8px">
+          <button class="per-btn on" id="flow-us" onclick="setFlowMarket('us')" style="min-width:52px">🇺🇸 해외</button>
+          <button class="per-btn" id="flow-kr" onclick="setFlowMarket('kr')" style="min-width:52px">🇰🇷 국내</button>
+        </div>
+      </div>
+      <div id="flow-list"><div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">⏳ 분석 중...</div></div>
+    </div>
+    <div class="ai-sec">
       <div class="ai-ttl">💡 AI 장기투자 추천 <span style="font-size:10px;color:#4a5568;font-weight:400">(10년 관점)</span></div>
       <div id="aipicks"></div>
     </div>
@@ -1480,10 +1496,137 @@ var AI_PICKS=[
    risk:'고밸류에이션 · 정부 예산 변동'}
 ];
 
+// ── 자금 쏠림 TOP 10 ─────────────────────────
+var flowPeriod='day',flowMarket='us',flowCache={};
+
+var FLOW_CANDS={
+  us:['NVDA','AAPL','MSFT','AMZN','META','GOOGL','TSLA','AMD','AVGO','PLTR',
+      'COIN','MSTR','SOXL','QQQ','SPY','TQQQ','ARM','SMCI','HOOD','IONQ',
+      'LLY','NFLX','CRWD','NET','PANW','INTC','QCOM','TSM','ASML','BRK-B'],
+  kr:['005930.KS','000660.KS','035420.KS','035720.KS','066570.KS','005380.KS',
+      '042660.KS','012330.KS','086280.KS','003550.KS','102110.KS','122630.KS',
+      '229200.KS','233740.KS','360750.KS','381170.KS','251340.KS','091230.KS',
+      '447680.KS','448290.KS','012450.KS','042670.KS','009540.KS','329180.KS',
+      '259960.KS','086520.KQ','247540.KQ','028300.KQ','196170.KQ','042700.KQ']
+};
+
+var FLOW_NAMES={
+  'NVDA':'NVIDIA','AAPL':'Apple','MSFT':'Microsoft','AMZN':'Amazon','META':'Meta','GOOGL':'Alphabet',
+  'TSLA':'Tesla','AMD':'AMD','AVGO':'Broadcom','PLTR':'Palantir','COIN':'Coinbase',
+  'MSTR':'MicroStrategy','SOXL':'반도체3X ETF','QQQ':'나스닥100 ETF','SPY':'S&P500 ETF',
+  'TQQQ':'나스닥3X ETF','ARM':'ARM Holdings','SMCI':'슈퍼마이크로','HOOD':'Robinhood','IONQ':'IonQ',
+  'LLY':'Eli Lilly','NFLX':'Netflix','CRWD':'CrowdStrike','NET':'Cloudflare','PANW':'팔로알토',
+  'INTC':'Intel','QCOM':'Qualcomm','TSM':'TSMC','ASML':'ASML','BRK-B':'버크셔해서웨이',
+  '005930.KS':'삼성전자','000660.KS':'SK하이닉스','035420.KS':'NAVER','035720.KS':'카카오',
+  '066570.KS':'LG전자','005380.KS':'현대차','042660.KS':'한화오션','012330.KS':'현대모비스',
+  '086280.KS':'현대글로비스','003550.KS':'LG','102110.KS':'TIGER 200',
+  '122630.KS':'KODEX 레버리지','229200.KS':'KODEX 코스닥150','233740.KS':'KODEX 코스닥150레버리지',
+  '360750.KS':'TIGER 미국S&P500','381170.KS':'TIGER 미국나스닥100',
+  '251340.KS':'TIGER 코스닥150레버리지','091230.KS':'TIGER 반도체',
+  '447680.KS':'SOL 미국배당다우존스','448290.KS':'TIGER 미국AI빅테크10',
+  '012450.KS':'한화에어로스페이스','042670.KS':'HD현대인프라코어','009540.KS':'HD한국조선해양',
+  '329180.KS':'HD현대중공업','259960.KS':'크래프톤',
+  '086520.KQ':'에코프로','247540.KQ':'에코프로비엠','028300.KQ':'HLB',
+  '196170.KQ':'알테오젠','042700.KQ':'한미반도체'
+};
+
+function setFlowPeriod(p){
+  flowPeriod=p;
+  document.querySelectorAll('[data-fp]').forEach(function(b){b.classList.toggle('on',b.dataset.fp===p);});
+  renderFlowList();
+}
+function setFlowMarket(m){
+  flowMarket=m;
+  document.getElementById('flow-us').className='per-btn'+(m==='us'?' on':'');
+  document.getElementById('flow-kr').className='per-btn'+(m==='kr'?' on':'');
+  renderFlowList();
+}
+function getFlowCfg(p){
+  if(p==='day')  return{range:'5d',lb:1};
+  if(p==='week') return{range:'1mo',lb:5};
+  if(p==='month')return{range:'3mo',lb:22};
+  if(p==='year') return{range:'1y',lb:250};
+  return{range:'5d',lb:1};
+}
+function loadFlowData(){
+  var cands=FLOW_CANDS[flowMarket];
+  var cfg=getFlowCfg(flowPeriod);
+  var key=flowMarket+'_'+flowPeriod;
+  if(flowCache[key]){renderFlowList();return;}
+  document.getElementById('flow-list').innerHTML='<div style="text-align:center;padding:20px;color:#4a5568;font-size:12px">⏳ '+cands.length+'개 종목 분석 중...</div>';
+  var results={},done=0,total=cands.length;
+  cands.forEach(function(sym,idx){
+    setTimeout(function(){
+      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range='+cfg.range;
+      var settled=false;
+      function onData(raw){
+        if(settled)return;
+        try{
+          var js=typeof raw==='string'?JSON.parse(raw):raw;
+          var res=js.chart.result[0];
+          var closes=res.indicators.quote[0].close.filter(function(c){return c!=null;});
+          if(closes.length>=2){
+            var last=closes[closes.length-1];
+            var prev=closes[Math.max(0,closes.length-1-cfg.lb)];
+            results[sym]={pct:(last-prev)/prev*100,price:last};
+            settled=true;
+          }
+        }catch(e){}
+        done++;
+        if(done===total){flowCache[key]=results;renderFlowList();}
+      }
+      function onFail(){done++;if(done===total){flowCache[key]=results;renderFlowList();}}
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+        .then(function(r){return r.json();}).then(function(d){onData(d.contents||'{}');}).catch(onFail);
+      fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+        .then(function(r){return r.json();}).then(onData).catch(function(){});
+    },idx*200);
+  });
+}
+function renderFlowList(){
+  var key=flowMarket+'_'+flowPeriod;
+  if(!flowCache[key]){loadFlowData();return;}
+  var results=flowCache[key];
+  var sorted=FLOW_CANDS[flowMarket]
+    .filter(function(s){return results[s];})
+    .sort(function(a,b){return results[b].pct-results[a].pct;})
+    .slice(0,10);
+  if(!sorted.length){
+    document.getElementById('flow-list').innerHTML='<div style="text-align:center;padding:16px;color:#4a5568;font-size:12px">데이터 없음</div>';
+    return;
+  }
+  var maxAbs=Math.max.apply(null,sorted.map(function(s){return Math.abs(results[s].pct);}));
+  var h='';
+  sorted.forEach(function(sym,i){
+    var d=results[sym];
+    var nm=FLOW_NAMES[sym]||sym;
+    var pct=d.pct;
+    var cls=pct>=0?'up':'dn';
+    var col=pct>=0?'#4f9eff':'#f87171';
+    var bar=maxAbs>0?Math.abs(pct)/maxAbs*100:0;
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #1a2235">'
+      +'<div style="font-size:12px;font-weight:700;color:#4a5568;min-width:20px;text-align:center">'+(i+1)+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nm+'</div>'
+        +'<div style="background:#1a2235;border-radius:2px;height:3px;margin-top:4px">'
+          +'<div style="height:3px;border-radius:2px;width:'+bar+'%;background:'+col+'"></div>'
+        +'</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:56px">'
+        +'<div class="'+cls+'" style="font-size:14px;font-weight:700">'+(pct>=0?'+':'')+pct.toFixed(2)+'%</div>'
+        +'<div style="font-size:10px;color:#4a5568">'+sym+'</div>'
+      +'</div>'
+    +'</div>';
+  });
+  document.getElementById('flow-list').innerHTML=h;
+}
+// ─────────────────────────────────────────────
+
 function openAI(){
   document.getElementById('ai-ov').classList.add('on');
   renderAIPicks();
   if(!mktFetched){mktFetched=true;loadMktAll();}
+  renderFlowList();
 }
 function closeAI(){document.getElementById('ai-ov').classList.remove('on');}
 function closeAIDrw(e){if(e.target.id==='ai-ov')closeAI();}
